@@ -1,6 +1,7 @@
 import { sumGameStats, seasonAverages, getBenchmarkStatusColor, getBenchmarkMetricValue } from '../utils/stats';
+import StatHelp from './StatHelp';
 
-function BenchmarkRow({ label, currentVal, target4, target12, isKey = false, isLowerBetter = false, format = '' }) {
+function BenchmarkRow({ metricKey, label, currentVal, target4, target12, isKey = false, isLowerBetter = false, format = '' }) {
   const v = parseFloat(currentVal);
   const statusColor = getBenchmarkStatusColor(currentVal, target12, isLowerBetter);
   return (
@@ -8,7 +9,7 @@ function BenchmarkRow({ label, currentVal, target4, target12, isKey = false, isL
       <td className="px-4 py-3 font-medium">
         <div className="flex items-center gap-2">
           {isKey && <span className="w-2 h-2 rounded-full bg-blue-500" />}
-          {label}
+          <StatHelp statId={metricKey}>{label}</StatHelp>
         </div>
       </td>
       <td className={`px-4 py-3 text-center ${statusColor}`}>
@@ -34,7 +35,8 @@ export default function BenchmarksTab({ player, games, benchmarkSet }) {
         <p className="text-gray-500 text-sm">
           {games.length === 0
             ? 'No games yet — targets shown for when games are logged.'
-            : 'Tracking current season averages vs 4-month and 12-month goals.'}
+            : 'Tracking current season averages vs 4-month and 12-month goals.'}{' '}
+          <span className="text-gray-400">Hover dotted metric names for definitions.</span>
         </p>
         <div className="mt-4 flex gap-4 text-xs">
           <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-100 inline-block rounded" /> On Track (12mo)</span>
@@ -55,6 +57,7 @@ export default function BenchmarksTab({ player, games, benchmarkSet }) {
           {targets.map((t) => (
             <BenchmarkRow
               key={t.metricKey}
+              metricKey={t.metricKey}
               label={t.label}
               currentVal={getBenchmarkMetricValue(t.metricKey, current) ?? 0}
               target4={t.target4}

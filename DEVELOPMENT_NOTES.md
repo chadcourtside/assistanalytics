@@ -58,10 +58,19 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 | `src/utils/stats.js` | Aggregations, eFG%, benchmark parsing |
 | `src/components/PlayerSelector.jsx` | Header player dropdown |
 | `src/components/AddPlayerForm.jsx` | Create player + benchmark set |
+| `src/data/statGlossary.js` | Stat definitions (standard + custom) |
+| `src/components/StatHelp.jsx` | Dotted underline + `title` tooltip |
+| `src/components/StatGlossaryModal.jsx` | Full glossary modal |
+| `src/components/StatGlossaryButton.jsx` | Header “Stat Guide” trigger |
+| `src/components/TableStatHeader.jsx` | Table `<th>` with StatHelp |
 
-## Stat glossary
+## Stat glossary (UI)
 
-### Standard (formula in code)
+- **Source of truth:** `src/data/statGlossary.js` — edit here to change tooltips and the Stat Guide modal.
+- **Inline help:** `StatHelp` with `statId` matching glossary `id` (or benchmark `metricKey`).
+- **Custom stats** are labeled in the modal; descriptions are app tracking conventions, not NBA official stats.
+
+Legacy reference (formulas also live in `src/utils/stats.js`):
 
 | Stat | Definition |
 |------|------------|
@@ -70,16 +79,7 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 | **Per 24 / 32** | `(stat / minutes) × base` |
 | **3PT%** | `threePm / threePa × 100` |
 | **REB** | Single `reb` field (legacy oreb+dreb summed on migrate) |
-
-### Custom / unclear
-
-| Stat | Notes |
-|------|-------|
-| **PTCH** | Paint touches |
-| **HQPA** | High-quality play assist (benchmark: AST + HQPA) |
-| **liveBallTov** | Initiator live-ball turnover (was `lbTov`) |
-| **DEFL** | Deflections |
-| **+/-** | Manually entered per game |
+| **PTCH / HQPA / liveBallTov / DEFL / +/-** | See `statGlossary.js` custom entries |
 
 ## Fragile areas
 
@@ -91,8 +91,8 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 ## Next steps (Phase 0+)
 
 1. JSON import/export
-3. Stat legend in UI
-4. Structured play events
+2. Benchmark target editor in UI
+3. Structured play events
 5. TypeScript + tests for `stats.js`
 
 ## Original prototype

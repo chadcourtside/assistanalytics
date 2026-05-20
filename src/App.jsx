@@ -6,6 +6,7 @@ import BenchmarksTab from './components/BenchmarksTab';
 import FilmRoomTab from './components/FilmRoomTab';
 import PlayerSelector from './components/PlayerSelector';
 import AddPlayerForm from './components/AddPlayerForm';
+import StatGlossaryButton from './components/StatGlossaryButton';
 
 const TABS = ['Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
 
@@ -41,6 +42,7 @@ export default function App() {
               activePlayerId={state.activePlayerId}
               onSelect={setActivePlayerId}
             />
+            <StatGlossaryButton />
             <AddPlayerForm onAdd={addPlayer} />
           </div>
         </div>

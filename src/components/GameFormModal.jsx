@@ -5,6 +5,7 @@ import {
   validateGameForm,
   buildGamePayload,
 } from '../utils/gameForm';
+import StatHelp from './StatHelp';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
@@ -123,7 +124,9 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
               {STAT_FIELDS.map(({ key, label }) => (
                 <div key={key}>
-                  <label className="block text-xs text-gray-500 text-center mb-1">{label}</label>
+                  <label className="block text-xs text-gray-500 text-center mb-1">
+                    <StatHelp statId={key}>{label}</StatHelp>
+                  </label>
                   <input
                     type="number"
                     min="0"

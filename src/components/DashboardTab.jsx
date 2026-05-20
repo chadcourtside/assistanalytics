@@ -1,4 +1,6 @@
 import StatCard from './StatCard';
+import TableStatHeader from './TableStatHeader';
+import StatHelp from './StatHelp';
 import { exportPDF } from '../utils/exportPdf';
 import { sumGameStats, calcEFG, calcAstTo, calcPer } from '../utils/stats';
 import { normalizeGameStats } from '../utils/gameStats';
@@ -25,7 +27,8 @@ export default function DashboardTab({ player, games }) {
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Season Averages &amp; Totals</h2>
           <p className="text-sm text-gray-500">
-            {player.displayName} — {games.length} Games Logged
+            {player.displayName} — {games.length} Games Logged ·{' '}
+            <span className="text-gray-400">Hover dotted stat labels for definitions</span>
           </p>
         </div>
         <button
@@ -37,18 +40,19 @@ export default function DashboardTab({ player, games }) {
         </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-        <StatCard label="Total Mins" value={totals.mins || 0} sub={`${(totals.mins / gms).toFixed(1)}/g`} bold />
-        <StatCard label="Total Pts" value={totals.pts || 0} sub={`${(totals.pts / gms).toFixed(1)}/g`} bold />
+        <StatCard statId="mins" label="Total Mins" value={totals.mins || 0} sub={`${(totals.mins / gms).toFixed(1)}/g`} bold />
+        <StatCard statId="pts" label="Total Pts" value={totals.pts || 0} sub={`${(totals.pts / gms).toFixed(1)}/g`} bold />
         <StatCard
           label="Shooting"
           value={`${totals.fgm || 0}/${totals.fga || 0}`}
           sub={`2PT: ${(totals.fgm || 0) - (totals.threePm || 0)}/${(totals.fga || 0) - (totals.threePa || 0)} | 3PT: ${totals.threePm || 0}/${totals.threePa || 0}`}
         />
-        <StatCard label="eFG%" value={`${eFgTotal}%`} />
-        <StatCard label="Total Ast" value={totals.ast || 0} sub={`${(totals.ast / gms).toFixed(1)}/g`} bold />
-        <StatCard label="AST/TO" value={astToTotal} />
-        <StatCard label="Paint Tch" value={totals.ptch || 0} sub={`${(totals.ptch / gms).toFixed(1)}/g`} />
+        <StatCard statId="efg" label="eFG%" value={`${eFgTotal}%`} />
+        <StatCard statId="ast" label="Total Ast" value={totals.ast || 0} sub={`${(totals.ast / gms).toFixed(1)}/g`} bold />
+        <StatCard statId="astTo" label="AST/TO" value={astToTotal} />
+        <StatCard statId="ptch" label="Paint Tch" value={totals.ptch || 0} sub={`${(totals.ptch / gms).toFixed(1)}/g`} />
         <StatCard
+          statId="plusMinus"
           label="Plus/Minus"
           value={totals.plusMinus > 0 ? `+${totals.plusMinus}` : totals.plusMinus || 0}
           sub="Cumulative"
@@ -71,20 +75,20 @@ export default function DashboardTab({ player, games }) {
             <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b">
               <tr>
                 <th className="px-3 py-2">Game</th>
-                <th className="px-3 py-2">MIN</th>
-                <th className="px-3 py-2">PTS</th>
-                <th className="px-3 py-2">FGM/A</th>
-                <th className="px-3 py-2">3PM/A</th>
-                <th className="px-3 py-2 text-blue-600">eFG%</th>
-                <th className="px-3 py-2">REB</th>
-                <th className="px-3 py-2">AST</th>
-                <th className="px-3 py-2">STL</th>
-                <th className="px-3 py-2 text-blue-600">PTCH</th>
-                <th className="px-3 py-2">TOV</th>
-                <th className="px-3 py-2">LB TO</th>
-                <th className="px-3 py-2 font-bold text-blue-600">A/TO</th>
-                <th className="px-3 py-2">PF</th>
-                <th className="px-3 py-2">+/-</th>
+                <TableStatHeader statId="mins">MIN</TableStatHeader>
+                <TableStatHeader statId="pts">PTS</TableStatHeader>
+                <TableStatHeader statId="fgm">FGM/A</TableStatHeader>
+                <TableStatHeader statId="threePm">3PM/A</TableStatHeader>
+                <TableStatHeader statId="efg" className="px-3 py-2 text-blue-600">eFG%</TableStatHeader>
+                <TableStatHeader statId="reb">REB</TableStatHeader>
+                <TableStatHeader statId="ast">AST</TableStatHeader>
+                <TableStatHeader statId="stl">STL</TableStatHeader>
+                <TableStatHeader statId="ptch" className="px-3 py-2 text-blue-600">PTCH</TableStatHeader>
+                <TableStatHeader statId="tov">TOV</TableStatHeader>
+                <TableStatHeader statId="liveBallTov">LB TO</TableStatHeader>
+                <TableStatHeader statId="astTo" className="px-3 py-2 font-bold text-blue-600">A/TO</TableStatHeader>
+                <TableStatHeader statId="pf">PF</TableStatHeader>
+                <TableStatHeader statId="plusMinus">+/-</TableStatHeader>
               </tr>
             </thead>
             <tbody>
@@ -141,21 +145,29 @@ export default function DashboardTab({ player, games }) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2"><h3 className="font-bold text-blue-800">Per 24 Minutes</h3></div>
+          <div className="bg-blue-50 border-b border-blue-100 px-4 py-2">
+            <h3 className="font-bold text-blue-800">
+              <StatHelp statId="perRate">Per 24 Minutes</StatHelp>
+            </h3>
+          </div>
           <div className="p-4 grid grid-cols-4 gap-4 text-center">
-            <div><div className="text-xl font-bold">{calcPer(totals.pts, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase">PTS</div></div>
-            <div><div className="text-xl font-bold">{calcPer(totals.ast, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase">AST</div></div>
-            <div><div className="text-xl font-bold">{calcPer(totals.reb, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase">REB</div></div>
-            <div><div className="text-xl font-bold">{calcPer(totals.ptch, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase">PTCH</div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.pts, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="pts">PTS</StatHelp></div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.ast, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="ast">AST</StatHelp></div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.reb, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="reb">REB</StatHelp></div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.ptch, totals.mins, 24)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="ptch">PTCH</StatHelp></div></div>
           </div>
         </div>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-4 py-2"><h3 className="font-bold text-slate-800">Per 32 Minutes</h3></div>
+          <div className="bg-slate-50 border-b border-slate-200 px-4 py-2">
+            <h3 className="font-bold text-slate-800">
+              <StatHelp statId="perRate">Per 32 Minutes</StatHelp>
+            </h3>
+          </div>
           <div className="p-4 grid grid-cols-4 gap-4 text-center">
-            <div><div className="text-xl font-bold">{calcPer(totals.pts, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase">PTS</div></div>
-            <div><div className="text-xl font-bold">{calcPer(totals.ast, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase">AST</div></div>
-            <div><div className="text-xl font-bold">{calcPer(totals.reb, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase">REB</div></div>
-            <div><div className="text-xl font-bold">{calcPer(totals.ptch, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase">PTCH</div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.pts, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="pts">PTS</StatHelp></div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.ast, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="ast">AST</StatHelp></div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.reb, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="reb">REB</StatHelp></div></div>
+            <div><div className="text-xl font-bold">{calcPer(totals.ptch, totals.mins, 32)}</div><div className="text-xs text-gray-500 uppercase"><StatHelp statId="ptch">PTCH</StatHelp></div></div>
           </div>
         </div>
       </div>

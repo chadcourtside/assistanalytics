@@ -6,6 +6,7 @@ A local-first **multi-player** basketball development app for tracking individua
 
 - **Players** — Add players and switch the active player from the header
 - **Dashboard** — Season totals, per-game box score, eFG%, per-24/32 minute rates, PDF export (per active player)
+- **Stat Guide** — In-app glossary (header button) plus hover tooltips on stat labels
 - **Game Logs** — Add, edit, and delete games; play-by-play and YouTube timestamp links
 - **Benchmarks** — Per-player development targets vs season averages
 - **Smart Film Room** — Filterable clip playlist with embedded YouTube playback
@@ -52,12 +53,13 @@ npm run preview
 5. Click timestamp links in play-by-play to jump to film, or use **Smart Film Room** to browse clips by type.
 6. Review **Dashboard** for cumulative stats and print/PDF export.
 7. Use **Benchmarks** to compare season averages against development goals.
+8. Open **Stat Guide** in the header (or hover dotted stat labels) for definitions of standard and custom metrics.
 
 ## Known limitations
 
 - **No JSON import/export yet** — Backup and transfer between devices coming soon.
 - **Legacy migration** — Old saves (`averyGames` or `assistanalytics-games`) migrate into the default Avery player on first load.
-- **Custom metrics** — PTCH, HQPA, LB TOV, and DEFL are tracked but not formally defined in code (see [DEVELOPMENT_NOTES.md](DEVELOPMENT_NOTES.md)).
+- **Custom metrics** — PTCH, HQPA, LB TOV, and DEFL use app-specific definitions in the Stat Guide (not official NBA stats).
 - **Benchmark colors** — Non-numeric targets (e.g. "Near Zero", "2:1+") show neutral status; numeric targets drive green/yellow highlighting.
 - **Film filters** — Keyword-based matching on play descriptions; may produce false positives (e.g. "def" in unrelated text).
 - **YouTube** — Requires internet for video embeds and links.
@@ -65,9 +67,8 @@ npm run preview
 ## Next improvement ideas
 
 - JSON import/export for backup
-- Formal definitions for custom tracking stats
+- Benchmark target editor in the UI
 - Trend charts (season progression)
-- Multi-player / roster support
 - Smarter benchmark target parsing for ranges and ratios
 
 ## Repository
