@@ -1,15 +1,16 @@
 # Assist Analytics
 
-A local-first basketball player development app for tracking game stats, development benchmarks, and film-linked play-by-play. Originally generated as a single-file Gemini prototype and stabilized into a modular Vite + React project.
+A local-first **multi-player** basketball development app for tracking individual game stats, development benchmarks, and film-linked play-by-play. Each player has separate games, benchmarks, and film data.
 
 ## What it does
 
-- **Dashboard** — Season totals, per-game box score, eFG%, per-24/32 minute rates, PDF export
+- **Players** — Add players and switch the active player from the header
+- **Dashboard** — Season totals, per-game box score, eFG%, per-24/32 minute rates, PDF export (per active player)
 - **Game Logs** — Play-by-play per game with YouTube timestamp links
-- **Benchmarks** — Season averages compared to 4-month and 12-month development targets
+- **Benchmarks** — Per-player development targets vs season averages
 - **Smart Film Room** — Filterable clip playlist with embedded YouTube playback
 
-Data is stored in your browser (`localStorage`). No backend or account required.
+Data is stored in your browser (`localStorage`, schema version 1). No backend or account required.
 
 ## Tech stack
 
@@ -44,16 +45,17 @@ npm run preview
 
 ## How to use
 
-1. Start the app — sample games load automatically on first visit.
-2. Open **Game Logs** and paste a YouTube URL for a game.
-3. Click timestamp links in play-by-play to jump to film, or use **Smart Film Room** to browse clips by type.
-4. Review **Dashboard** for cumulative stats and print/PDF export.
-5. Use **Benchmarks** to compare season averages against development goals.
+1. Start the app — a default player (Avery) with sample games loads on first visit.
+2. Use the **Player** dropdown in the header to switch players, or **+ Add Player** to create another.
+3. Open **Game Logs** and paste a YouTube URL for a game.
+4. Click timestamp links in play-by-play to jump to film, or use **Smart Film Room** to browse clips by type.
+5. Review **Dashboard** for cumulative stats and print/PDF export.
+6. Use **Benchmarks** to compare season averages against development goals.
 
 ## Known limitations
 
-- **Read-only stats** — Box score and play-by-play data are seeded; only YouTube URLs are editable in the UI.
-- **Player-specific branding** — UI still references the original player name ("Avery"); storage migrates from legacy key `averyGames` to `assistanalytics-games`.
+- **Read-only game stats** — Box score and play-by-play are seeded; only YouTube URLs are editable until Phase 0 game entry.
+- **Legacy migration** — Old saves (`averyGames` or `assistanalytics-games`) migrate into the default Avery player on first load.
 - **Custom metrics** — PTCH, HQPA, LB TOV, and DEFL are tracked but not formally defined in code (see [DEVELOPMENT_NOTES.md](DEVELOPMENT_NOTES.md)).
 - **Benchmark colors** — Non-numeric targets (e.g. "Near Zero", "2:1+") show neutral status; numeric targets drive green/yellow highlighting.
 - **Film filters** — Keyword-based matching on play descriptions; may produce false positives (e.g. "def" in unrelated text).

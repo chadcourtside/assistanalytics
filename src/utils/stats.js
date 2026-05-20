@@ -1,15 +1,18 @@
+import { normalizeGameStats } from './gameStats';
+
 export function sumGameStats(games) {
   return games.reduce((acc, game) => {
-    for (const key in game.stats) {
-      acc[key] = (acc[key] || 0) + game.stats[key];
+    const stats = normalizeGameStats(game.stats);
+    for (const key of Object.keys(stats)) {
+      acc[key] = (acc[key] || 0) + stats[key];
     }
     return acc;
   }, {});
 }
 
-export function calcEFG(fgm, tpm, fga) {
+export function calcEFG(fgm, threePm, fga) {
   if (fga <= 0) return null;
-  return (((fgm + 0.5 * tpm) / fga) * 100).toFixed(1);
+  return (((fgm + 0.5 * threePm) / fga) * 100).toFixed(1);
 }
 
 export function calcAstTo(ast, tov) {
@@ -25,23 +28,26 @@ export function seasonAverages(totals, gameCount) {
   return {
     mins: totals.mins / gms,
     pts: totals.pts / gms,
-    tpPct: totals.tpa > 0 ? (totals.tpm / totals.tpa) * 100 : 0,
-    tpa: totals.tpa / gms,
+    tpPct: totals.threePa > 0 ? (totals.threePm / totals.threePa) * 100 : 0,
+    threePa: totals.threePa / gms,
     ast: totals.ast / gms,
     astHqpa: (totals.ast + (totals.hqpa || 0)) / gms,
     ptch: totals.ptch / gms,
-    reb: ((totals.oreb || 0) + (totals.dreb || 0)) / gms,
+    reb: totals.reb / gms,
     defl: (totals.defl || 0) / gms,
     tov: totals.tov / gms,
-    lbTov: (totals.lbTov || 0) / gms,
+    liveBallTov: (totals.liveBallTov || 0) / gms,
     astTo: totals.tov > 0 ? totals.ast / totals.tov : totals.ast,
   };
 }
 
-/**
- * Parse a benchmark target string into a comparable number when possible.
- * Returns null for non-numeric targets (ranges, "Near Zero", ratios like "2:1+").
- */
+export function getBenchmarkMetricValue(metricKey, averages) {
+  if (averages[metricKey] !== undefined) {
+    return averages[metricKey];
+  }
+  return undefined;
+}
+
 export function parseBenchmarkTarget(targetStr) {
   if (!targetStr || typeof targetStr !== 'string') return null;
 

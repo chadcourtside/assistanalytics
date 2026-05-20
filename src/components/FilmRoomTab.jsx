@@ -15,7 +15,7 @@ function matchesFilter(clip, filter) {
   return true;
 }
 
-export default function FilmRoomTab({ games }) {
+export default function FilmRoomTab({ player, games }) {
   const [filter, setFilter] = useState('All');
   const [currentClip, setCurrentClip] = useState(null);
 
@@ -42,6 +42,15 @@ export default function FilmRoomTab({ games }) {
   }, [games]);
 
   const filteredClips = useMemo(() => allClips.filter((c) => matchesFilter(c, filter)), [allClips, filter]);
+
+  if (games.length === 0) {
+    return (
+      <div className="text-center py-12 text-gray-500">
+        <p className="text-lg font-medium">No games for {player?.displayName} yet.</p>
+        <p className="text-sm mt-2">Add games and YouTube links in Game Logs to use the film room.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[85vh]">

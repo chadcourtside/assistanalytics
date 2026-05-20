@@ -4,43 +4,58 @@
 
 ```mermaid
 flowchart TB
-  subgraph vite [Vite dev/build]
-    index[index.html]
-    main[main.jsx]
+  subgraph storage [localStorage]
+    state[assistanalytics-state schema v1]
   end
   subgraph react [React app]
+    useApp[useAppState]
     App[App.jsx]
-    useGames[useGames hook]
     tabs[Tab components]
   end
-  LS[(localStorage)]
-  index --> main --> App
-  App --> useGames
-  useGames --> LS
-  App --> tabs
+  useApp --> state
+  App --> useApp
+  App --> PlayerSelector
+  useApp --> tabs
 ```
 
 - **Entry:** `index.html` → `src/main.jsx` → `src/App.jsx`
-- **State:** `useGames` loads/saves game array; legacy key `averyGames` is read first, then `assistanalytics-games`
+- **State:** Single `AppState` blob with `players`, `games`, `benchmarkSets`, `activePlayerId`
+- **Legacy:** Reads `averyGames` or `assistanalytics-games` once, migrates to v1, then uses `assistanalytics-state` only
 - **No router** — tab switching via `activeTab` string state
-- **No API** — fully client-side
+
+## AppState (schema version 1)
+
+```js
+{
+  schemaVersion: 1,
+  activePlayerId: string | null,
+  players: Player[],
+  games: Game[],
+  benchmarkSets: BenchmarkSet[]
+}
+```
+
+- **Player** — `id`, `firstName`, `displayName`, optional profile fields, timestamps
+- **Game** — `id`, `playerId`, `date`, `opponent`, `stats`, `playByPlay`, `competition`, `videoUrl`, timestamps
+- **BenchmarkSet** — one per player; `targets[]` drives Benchmarks tab
+
+Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-avery-3`.
 
 ## File map
 
 | Path | Purpose |
 |------|---------|
-| `src/App.jsx` | Shell, header, nav, tab routing |
-| `src/hooks/useGames.js` | Games state + localStorage persistence |
-| `src/data/defaultGames.js` | Seed data (3 tournament games) |
-| `src/utils/stats.js` | eFG%, AST/TO, per-minute, benchmarks, target parsing |
-| `src/utils/youtube.js` | YouTube ID extraction, timestamp parsing |
-| `src/utils/exportPdf.js` | html2pdf wrapper for dashboard/box score |
-| `src/components/DashboardTab.jsx` | Totals, box score table, per-24/32 |
-| `src/components/LogsTab.jsx` | Game cards, play-by-play, URL inputs |
-| `src/components/BenchmarksTab.jsx` | Development targets table |
-| `src/components/FilmRoomTab.jsx` | Clip playlist + embed player |
-| `src/components/StatCard.jsx` | Dashboard summary card |
-| `archive/gemini-original-index.html` | Unmodified single-file prototype |
+| `src/hooks/useAppState.js` | Load/save AppState, player switch, add player, update video URL |
+| `src/storage/loadState.js` | Load + migrate legacy storage |
+| `src/storage/saveState.js` | Persist AppState |
+| `src/storage/migrateLegacyGames.js` | Legacy games array → v1 |
+| `src/data/defaultAppState.js` | Fresh-install seed |
+| `src/data/defaultBenchmarkTargets.js` | Benchmark rows cloned per new player |
+| `src/utils/gameStats.js` | Normalize stats; legacy `tpm`/`lbTov`/`oreb` support |
+| `src/utils/migrateGame.js` | Legacy game → v1 Game |
+| `src/utils/stats.js` | Aggregations, eFG%, benchmark parsing |
+| `src/components/PlayerSelector.jsx` | Header player dropdown |
+| `src/components/AddPlayerForm.jsx` | Create player + benchmark set |
 
 ## Stat glossary
 
@@ -51,36 +66,34 @@ flowchart TB
 | **eFG%** | `(FGM + 0.5 × 3PM) / FGA × 100` |
 | **AST/TO** | `assists / turnovers` when TOV > 0; else raw assist count |
 | **Per 24 / 32** | `(stat / minutes) × base` |
-| **3PT%** | `3PM / 3PA × 100` (benchmarks tab) |
-| **REB** | `OREB + DREB` |
+| **3PT%** | `threePm / threePa × 100` |
+| **REB** | Single `reb` field (legacy oreb+dreb summed on migrate) |
 
-### Custom / unclear (do not assume NBA definitions)
+### Custom / unclear
 
 | Stat | Notes |
 |------|-------|
-| **PTCH** | Paint touches — manual count in box score; also inferred from play-by-play text |
-| **HQPA** | High-quality play assist — added to assists in `AST + HQPA` benchmark; meaning not defined in code |
-| **LB TOV** | Initiator live-ball turnover — tracked separately from total **TOV** |
-| **DEFL** | Deflections — manual count |
-| **+/-** | Plus/minus — entered manually per game in seed data; no on-court calculation in app |
+| **PTCH** | Paint touches |
+| **HQPA** | High-quality play assist (benchmark: AST + HQPA) |
+| **liveBallTov** | Initiator live-ball turnover (was `lbTov`) |
+| **DEFL** | Deflections |
+| **+/-** | Manually entered per game |
 
 ## Fragile areas
 
-1. **Benchmark target parsing** (`parseBenchmarkTarget` in `stats.js`) — Handles `5+`, `≤ 2`, and simple ranges; fails gracefully to neutral gray for `"Near Zero"`, `"2:1+"`, etc.
-2. **Film filters** — Substring search on lowercase play text; `"def"` matches many descriptions.
-3. **localStorage schema** — No versioning; schema changes could break saved data.
-4. **html2pdf** — Large tables may clip or paginate poorly; test after UI changes.
-5. **YouTube embed** — Depends on video privacy settings and embed permissions.
+1. **Benchmark parsing** — Non-numeric targets stay neutral gray
+2. **Film filters** — Substring matching on play text
+3. **Hooks** — `FilmRoomTab` must call hooks before any early return
+4. **Schema** — Bump `schemaVersion` and add migration when shape changes
 
-## Recommended next refactors
+## Next steps (Phase 0+)
 
-1. Add TypeScript for game/stat shapes
-2. Extract `Game` type and validation (Zod or manual)
-3. Unit tests for `stats.js` (eFG%, benchmark parsing)
-4. Game CRUD UI + JSON import/export
-5. Replace keyword film filters with tagged events in play-by-play schema
-6. Document or rename custom stats with a settings/legend panel
+1. Game CRUD UI
+2. JSON import/export
+3. Stat legend in UI
+4. Structured play events
+5. TypeScript + tests for `stats.js`
 
 ## Original prototype
 
-The Gemini-generated single-file app lives at `archive/gemini-original-index.html`. It used CDN React, Babel-in-browser, unused Recharts imports, and key `averyGames`.
+`archive/gemini-original-index.html` — single-file CDN app with key `averyGames`.
