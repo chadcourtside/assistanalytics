@@ -6,7 +6,7 @@ A local-first **multi-player** basketball development app for tracking individua
 
 - **Players** — Add players and switch the active player from the header
 - **Dashboard** — Season totals, per-game box score, eFG%, per-24/32 minute rates, PDF export (per active player)
-- **Game Logs** — Play-by-play per game with YouTube timestamp links
+- **Game Logs** — Add, edit, and delete games; play-by-play and YouTube timestamp links
 - **Benchmarks** — Per-player development targets vs season averages
 - **Smart Film Room** — Filterable clip playlist with embedded YouTube playback
 
@@ -47,14 +47,15 @@ npm run preview
 
 1. Start the app — a default player (Avery) with sample games loads on first visit.
 2. Use the **Player** dropdown in the header to switch players, or **+ Add Player** to create another.
-3. Open **Game Logs** and paste a YouTube URL for a game.
-4. Click timestamp links in play-by-play to jump to film, or use **Smart Film Room** to browse clips by type.
-5. Review **Dashboard** for cumulative stats and print/PDF export.
-6. Use **Benchmarks** to compare season averages against development goals.
+3. Open **Game Logs**, click **+ Add Game**, and enter box score stats and play-by-play.
+4. Paste a YouTube URL on the game card (or in the game form).
+5. Click timestamp links in play-by-play to jump to film, or use **Smart Film Room** to browse clips by type.
+6. Review **Dashboard** for cumulative stats and print/PDF export.
+7. Use **Benchmarks** to compare season averages against development goals.
 
 ## Known limitations
 
-- **Read-only game stats** — Box score and play-by-play are seeded; only YouTube URLs are editable until Phase 0 game entry.
+- **No JSON import/export yet** — Backup and transfer between devices coming soon.
 - **Legacy migration** — Old saves (`averyGames` or `assistanalytics-games`) migrate into the default Avery player on first load.
 - **Custom metrics** — PTCH, HQPA, LB TOV, and DEFL are tracked but not formally defined in code (see [DEVELOPMENT_NOTES.md](DEVELOPMENT_NOTES.md)).
 - **Benchmark colors** — Non-numeric targets (e.g. "Near Zero", "2:1+") show neutral status; numeric targets drive green/yellow highlighting.
@@ -63,7 +64,7 @@ npm run preview
 
 ## Next improvement ideas
 
-- Game add/edit UI and JSON import/export
+- JSON import/export for backup
 - Formal definitions for custom tracking stats
 - Trend charts (season progression)
 - Multi-player / roster support

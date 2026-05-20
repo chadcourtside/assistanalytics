@@ -14,7 +14,7 @@ export default function DashboardTab({ player, games }) {
     return (
       <div className="text-center py-12 text-gray-500">
         <p className="text-lg font-medium">No games logged for {player?.displayName} yet.</p>
-        <p className="text-sm mt-2">Game entry will be available in a future update.</p>
+        <p className="text-sm mt-2">Open Game Logs to add the first game.</p>
       </div>
     );
   }

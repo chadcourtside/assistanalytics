@@ -30,7 +30,16 @@ export function normalizeGameStats(raw = {}) {
 }
 
 export function getGameDateLabel(game) {
-  if (game.competition) return game.competition;
-  if (game.date) return game.date;
-  return '—';
+  const parts = [];
+  if (game.date) parts.push(game.date);
+  if (game.competition) parts.push(game.competition);
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
+
+export function sortGamesNewestFirst(games) {
+  return [...games].sort((a, b) => {
+    const da = a.date || a.createdAt || '';
+    const db = b.date || b.createdAt || '';
+    return db.localeCompare(da);
+  });
 }

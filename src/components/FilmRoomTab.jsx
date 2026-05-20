@@ -47,7 +47,7 @@ export default function FilmRoomTab({ player, games }) {
     return (
       <div className="text-center py-12 text-gray-500">
         <p className="text-lg font-medium">No games for {player?.displayName} yet.</p>
-        <p className="text-sm mt-2">Add games and YouTube links in Game Logs to use the film room.</p>
+        <p className="text-sm mt-2">Add a game in Game Logs and paste a YouTube link to use the film room.</p>
       </div>
     );
   }

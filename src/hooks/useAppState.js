@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { loadState } from '../storage/loadState';
 import { saveState } from '../storage/saveState';
 import { createBenchmarkSet } from '../data/defaultBenchmarkTargets';
-import { createPlayerId, createBenchmarkId, nowIso } from '../models/appState';
+import { sortGamesNewestFirst } from '../utils/gameStats';
+import { createPlayerId, createBenchmarkId, createGameId, nowIso } from '../models/appState';
 
 export function useAppState() {
   const [state, setState] = useState(loadState);
@@ -16,13 +17,11 @@ export function useAppState() {
     [state.players, state.activePlayerId]
   );
 
-  const activePlayerGames = useMemo(
-    () =>
-      state.activePlayerId
-        ? state.games.filter((g) => g.playerId === state.activePlayerId)
-        : [],
-    [state.games, state.activePlayerId]
-  );
+  const activePlayerGames = useMemo(() => {
+    if (!state.activePlayerId) return [];
+    const filtered = state.games.filter((g) => g.playerId === state.activePlayerId);
+    return sortGamesNewestFirst(filtered);
+  }, [state.games, state.activePlayerId]);
 
   const activeBenchmarkSet = useMemo(() => {
     if (!state.activePlayerId) return null;
@@ -71,21 +70,48 @@ export function useAppState() {
     return player;
   }, []);
 
-  const updateGameUrl = useCallback(
-    (gameId, url) => {
-      if (!state.activePlayerId) return;
+  const addGame = useCallback((payload) => {
+    setState((prev) => {
+      if (!prev.activePlayerId) return prev;
       const ts = nowIso();
-      setState((prev) => ({
+      const game = {
+        id: createGameId(),
+        playerId: prev.activePlayerId,
+        ...payload,
+        createdAt: ts,
+        updatedAt: ts,
+      };
+      return { ...prev, games: [...prev.games, game] };
+    });
+  }, []);
+
+  const updateGame = useCallback((gameId, payload) => {
+    setState((prev) => {
+      if (!prev.activePlayerId) return prev;
+      const ts = nowIso();
+      return {
         ...prev,
         games: prev.games.map((g) =>
           g.id === gameId && g.playerId === prev.activePlayerId
-            ? { ...g, videoUrl: url, updatedAt: ts }
+            ? { ...g, ...payload, updatedAt: ts }
             : g
         ),
-      }));
-    },
-    [state.activePlayerId]
-  );
+      };
+    });
+  }, []);
+
+  const deleteGame = useCallback((gameId) => {
+    setState((prev) => ({
+      ...prev,
+      games: prev.games.filter(
+        (g) => !(g.id === gameId && g.playerId === prev.activePlayerId)
+      ),
+    }));
+  }, []);
+
+  const updateGameUrl = useCallback((gameId, url) => {
+    updateGame(gameId, { videoUrl: url });
+  }, [updateGame]);
 
   return {
     state,
@@ -94,6 +120,9 @@ export function useAppState() {
     activeBenchmarkSet,
     setActivePlayerId,
     addPlayer,
+    addGame,
+    updateGame,
+    deleteGame,
     updateGameUrl,
   };
 }

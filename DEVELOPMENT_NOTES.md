@@ -45,7 +45,9 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 
 | Path | Purpose |
 |------|---------|
-| `src/hooks/useAppState.js` | Load/save AppState, player switch, add player, update video URL |
+| `src/hooks/useAppState.js` | Load/save AppState, players, games CRUD, video URL |
+| `src/components/GameFormModal.jsx` | Add/edit game form (stats + play-by-play) |
+| `src/utils/gameForm.js` | Form validation and stat field definitions |
 | `src/storage/loadState.js` | Load + migrate legacy storage |
 | `src/storage/saveState.js` | Persist AppState |
 | `src/storage/migrateLegacyGames.js` | Legacy games array → v1 |
@@ -88,8 +90,7 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 
 ## Next steps (Phase 0+)
 
-1. Game CRUD UI
-2. JSON import/export
+1. JSON import/export
 3. Stat legend in UI
 4. Structured play events
 5. TypeScript + tests for `stats.js`

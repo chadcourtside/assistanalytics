@@ -18,6 +18,9 @@ export default function App() {
     activeBenchmarkSet,
     setActivePlayerId,
     addPlayer,
+    addGame,
+    updateGame,
+    deleteGame,
     updateGameUrl,
   } = useAppState();
 
@@ -67,7 +70,14 @@ export default function App() {
               <DashboardTab player={activePlayer} games={activePlayerGames} />
             )}
             {activeTab === 'Game Logs' && (
-              <LogsTab player={activePlayer} games={activePlayerGames} updateGameUrl={updateGameUrl} />
+              <LogsTab
+                player={activePlayer}
+                games={activePlayerGames}
+                addGame={addGame}
+                updateGame={updateGame}
+                deleteGame={deleteGame}
+                updateGameUrl={updateGameUrl}
+              />
             )}
             {activeTab === 'Benchmarks' && (
               <BenchmarksTab

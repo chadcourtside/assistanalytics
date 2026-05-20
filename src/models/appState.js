@@ -18,3 +18,7 @@ export function createPlayerId() {
 export function createBenchmarkId(playerId) {
   return `benchmark-${playerId}`;
 }
+
+export function createGameId() {
+  return `game-${crypto.randomUUID()}`;
+}
