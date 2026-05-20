@@ -7,7 +7,13 @@ import {
   saveFilmPreroll,
   FILM_PREROLL_OPTIONS,
 } from '../utils/youtube';
-import { FILM_FILTERS, playEventMatchesFilter, playEventsFromPlayByPlay } from '../utils/playEvents';
+import { formatGameTitle } from '../utils/gameStats';
+import {
+  FILM_FILTERS,
+  playEventMatchesFilter,
+  playEventsFromPlayByPlay,
+  countClipsForFilter,
+} from '../utils/playEvents';
 
 function buildClipsFromGames(games) {
   return games.reduce((acc, game) => {
@@ -37,6 +43,7 @@ function buildClipsFromGames(games) {
 }
 
 export default function FilmRoomTab({ player, games, initialGameId = null }) {
+  const [gameFilter, setGameFilter] = useState(initialGameId || 'all');
   const [filter, setFilter] = useState('all');
   const [selectedClipId, setSelectedClipId] = useState(null);
   const [preroll, setPreroll] = useState(() => loadFilmPreroll());
@@ -44,10 +51,28 @@ export default function FilmRoomTab({ player, games, initialGameId = null }) {
 
   const allClips = useMemo(() => buildClipsFromGames(games), [games]);
 
-  const filteredClips = useMemo(
-    () => allClips.filter((c) => playEventMatchesFilter(c, filter)),
-    [allClips, filter]
+  const gamesWithFilm = useMemo(
+    () => games.filter((g) => getYoutubeId(g.videoUrl)),
+    [games]
   );
+
+  const gameScopedClips = useMemo(() => {
+    if (gameFilter === 'all') return allClips;
+    return allClips.filter((c) => c.gameId === gameFilter);
+  }, [allClips, gameFilter]);
+
+  const filteredClips = useMemo(
+    () => gameScopedClips.filter((c) => playEventMatchesFilter(c, filter)),
+    [gameScopedClips, filter]
+  );
+
+  const filterCounts = useMemo(() => {
+    const counts = {};
+    for (const f of FILM_FILTERS) {
+      counts[f.id] = countClipsForFilter(gameScopedClips, f.id);
+    }
+    return counts;
+  }, [gameScopedClips]);
 
   const currentIndex = useMemo(() => {
     if (!selectedClipId) return -1;
@@ -84,6 +109,10 @@ export default function FilmRoomTab({ player, games, initialGameId = null }) {
       setSelectedClipId(null);
     }
   }, [filter, filteredClips, selectedClipId]);
+
+  useEffect(() => {
+    if (initialGameId) setGameFilter(initialGameId);
+  }, [initialGameId]);
 
   const handlePrerollChange = (value) => {
     const n = parseInt(value, 10);
@@ -231,20 +260,53 @@ export default function FilmRoomTab({ player, games, initialGameId = null }) {
       </div>
 
       <div className="bg-white rounded-xl shadow-md flex flex-col h-full border border-gray-200 min-h-0">
-        <div className="p-4 border-b border-gray-100 shrink-0">
-          <h2 className="text-xl font-bold text-gray-800 mb-1">Automated Playlist</h2>
-          <p className="text-xs text-gray-500 mb-3">{player?.displayName}</p>
-          <div className="flex flex-wrap gap-2">
-            {FILM_FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilter(f.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors ${filter === f.id ? 'bg-blue-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        <div className="p-4 border-b border-gray-100 shrink-0 space-y-3">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Automated Playlist</h2>
+            <p className="text-xs text-gray-500 mt-0.5">{player?.displayName}</p>
+          </div>
+          {gamesWithFilm.length > 0 && (
+            <label className="block text-xs">
+              <span className="font-semibold text-gray-500 uppercase tracking-wide">Game</span>
+              <select
+                value={gameFilter}
+                onChange={(e) => setGameFilter(e.target.value)}
+                className="mt-1 w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm font-semibold bg-white focus:ring-2 focus:ring-blue-200 focus:outline-none"
               >
-                {f.label}
-              </button>
-            ))}
+                <option value="all">
+                  All games ({allClips.length})
+                </option>
+                {gamesWithFilm.map((g) => {
+                  const n = allClips.filter((c) => c.gameId === g.id).length;
+                  return (
+                    <option key={g.id} value={g.id}>
+                      {formatGameTitle(g, player)} ({n})
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+          )}
+          <div>
+            <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Play type
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {FILM_FILTERS.map((f) => {
+                const count = filterCounts[f.id] ?? 0;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setFilter(f.id)}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-full transition-colors ${filter === f.id ? 'bg-blue-600 text-white shadow' : count === 0 ? 'bg-gray-50 text-gray-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    title={count === 0 ? 'No clips in this category' : `${count} clips`}
+                  >
+                    {f.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 bg-gray-50 min-h-0">

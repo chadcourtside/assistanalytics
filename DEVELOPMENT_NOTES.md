@@ -76,7 +76,7 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 
 Play-by-play lines like `3:50 Make 2 PT, paint touch` are parsed into structured types (`make`, `paintTouch`, etc.) in `playEvents.js`. Film Room filters match on `types[]` instead of raw substring search, reducing false positives on words like "def".
 
-Recommended tags when logging: **Make/Miss 2 PT**, **Make/Miss 3 PT**, **Assist**, **HQPA**, **Paint touch**, **TOV**, **LB TOV**, **Def reb**, **Def**, **Steal**. Film Room filters: All, Make, Miss, 2PT, 3PT, Assist, HQPA, Paint Touch, Turnover, LB TOV, Rebound, Deflection, Steal.
+Recommended tags when logging: **Make/Miss 2 PT**, **Make/Miss 3 PT**, **Assist**, **HQPA**, **Paint touch**, **TOV**, **LB TOV**, **Def reb**, **Def**, **Steal**. Film Room: filter by game, play-type pills with clip counts, **Other** for unmatched lines, Prev/Next playback, YouTube deep link, adjustable lead-in.
 
 ## Benchmark parsing
 

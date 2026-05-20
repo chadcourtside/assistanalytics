@@ -3,6 +3,8 @@ import {
   parsePlayEventLine,
   inferPlayEventTypes,
   playEventMatchesFilter,
+  isUnclassifiedClip,
+  countClipsForFilter,
   PLAY_EVENT_TYPES,
 } from './playEvents.js';
 
@@ -69,5 +71,25 @@ describe('parsePlayEventLine', () => {
     const event = parsePlayEventLine('[3:50] Make 2 PT');
     expect(event.timeStr).toBe('3:50');
     expect(event.types).toContain(PLAY_EVENT_TYPES.MAKE);
+  });
+});
+
+describe('unclassified and counts', () => {
+  it('flags unknown lines as other-only', () => {
+    const clip = { types: [PLAY_EVENT_TYPES.OTHER] };
+    expect(isUnclassifiedClip(clip)).toBe(true);
+    expect(playEventMatchesFilter(clip, 'other')).toBe(true);
+    expect(playEventMatchesFilter(clip, 'make')).toBe(false);
+  });
+
+  it('counts clips per filter', () => {
+    const clips = [
+      { types: [PLAY_EVENT_TYPES.MAKE] },
+      { types: [PLAY_EVENT_TYPES.OTHER] },
+      { types: [PLAY_EVENT_TYPES.MAKE, PLAY_EVENT_TYPES.THREE_PT] },
+    ];
+    expect(countClipsForFilter(clips, 'all')).toBe(3);
+    expect(countClipsForFilter(clips, 'make')).toBe(2);
+    expect(countClipsForFilter(clips, 'other')).toBe(1);
   });
 });

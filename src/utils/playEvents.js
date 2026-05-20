@@ -31,6 +31,7 @@ export const FILM_FILTERS = [
   { id: 'rebound', label: 'Rebound', types: [PLAY_EVENT_TYPES.REBOUND] },
   { id: 'deflection', label: 'Deflection', types: [PLAY_EVENT_TYPES.DEFLECTION] },
   { id: 'steal', label: 'Steal', types: [PLAY_EVENT_TYPES.STEAL] },
+  { id: 'other', label: 'Other', types: null },
 ];
 
 const LINE_RE = /^\[?\s*(\d{1,2}:\d{2})\s*\]?\s*(.*)$/;
@@ -104,11 +105,24 @@ export function playEventsFromPlayByPlay(playByPlay) {
   return playByPlay.map(parsePlayEventLine).filter(Boolean);
 }
 
+/** Lines that did not match any known play tag. */
+export function isUnclassifiedClip(clip) {
+  const types = clip?.types ?? [];
+  return types.length === 1 && types[0] === PLAY_EVENT_TYPES.OTHER;
+}
+
 export function playEventMatchesFilter(event, filterId) {
   if (filterId === 'all' || !filterId) return true;
+  if (filterId === 'other') return isUnclassifiedClip(event);
   const filter = FILM_FILTERS.find((f) => f.id === filterId);
   if (!filter?.types) return true;
   return event.types.some((t) => filter.types.includes(t));
+}
+
+export function countClipsForFilter(clips, filterId) {
+  if (!clips?.length) return 0;
+  if (filterId === 'all') return clips.length;
+  return clips.filter((c) => playEventMatchesFilter(c, filterId)).length;
 }
 
 export function normalizeGamePlayEvents(game) {
