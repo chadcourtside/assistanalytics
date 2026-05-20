@@ -4,10 +4,13 @@
 export function normalizeGameStats(raw = {}) {
   const threePm = raw.threePm ?? raw.tpm ?? 0;
   const threePa = raw.threePa ?? raw.tpa ?? 0;
+  const oreb = raw.oreb ?? 0;
+  const dreb = raw.dreb ?? 0;
   const reb =
     raw.reb ??
-    (raw.oreb != null || raw.dreb != null ? (raw.oreb || 0) + (raw.dreb || 0) : 0);
+    (oreb > 0 || dreb > 0 ? oreb + dreb : 0);
   const liveBallTov = raw.liveBallTov ?? raw.lbTov ?? 0;
+  const foulsDrawn = raw.foulsDrawn ?? raw.fd ?? 0;
 
   return {
     mins: raw.mins ?? 0,
@@ -16,6 +19,8 @@ export function normalizeGameStats(raw = {}) {
     fga: raw.fga ?? 0,
     threePm,
     threePa,
+    oreb,
+    dreb,
     reb,
     ast: raw.ast ?? 0,
     hqpa: raw.hqpa ?? 0,
@@ -23,7 +28,9 @@ export function normalizeGameStats(raw = {}) {
     liveBallTov,
     stl: raw.stl ?? 0,
     defl: raw.defl ?? 0,
+    blk: raw.blk ?? 0,
     pf: raw.pf ?? 0,
+    foulsDrawn,
     ptch: raw.ptch ?? 0,
     plusMinus: raw.plusMinus ?? 0,
   };

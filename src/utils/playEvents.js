@@ -12,8 +12,14 @@ export const PLAY_EVENT_TYPES = {
   TURNOVER: 'turnover',
   LIVE_BALL_TOV: 'liveBallTov',
   REBOUND: 'rebound',
+  OREB: 'oreb',
+  DREB: 'dreb',
+  BLOCK: 'block',
+  PERSONAL_FOUL: 'personalFoul',
+  FOUL_DRAWN: 'foulDrawn',
   DEFLECTION: 'deflection',
   STEAL: 'steal',
+  NOTE: 'note',
   OTHER: 'other',
 };
 
@@ -69,6 +75,31 @@ export const PLAY_EVENT_BADGE_META = {
     className: 'bg-teal-100 text-teal-900 border-teal-200',
     darkClassName: 'bg-teal-900/60 text-teal-200 border-teal-800',
   },
+  [PLAY_EVENT_TYPES.OREB]: {
+    short: 'OREB',
+    className: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+    darkClassName: 'bg-emerald-900/60 text-emerald-200 border-emerald-800',
+  },
+  [PLAY_EVENT_TYPES.DREB]: {
+    short: 'DREB',
+    className: 'bg-teal-100 text-teal-900 border-teal-200',
+    darkClassName: 'bg-teal-900/60 text-teal-200 border-teal-800',
+  },
+  [PLAY_EVENT_TYPES.BLOCK]: {
+    short: 'Blk',
+    className: 'bg-fuchsia-100 text-fuchsia-900 border-fuchsia-200',
+    darkClassName: 'bg-fuchsia-900/60 text-fuchsia-200 border-fuchsia-800',
+  },
+  [PLAY_EVENT_TYPES.PERSONAL_FOUL]: {
+    short: 'PF',
+    className: 'bg-yellow-100 text-yellow-900 border-yellow-200',
+    darkClassName: 'bg-yellow-900/60 text-yellow-200 border-yellow-800',
+  },
+  [PLAY_EVENT_TYPES.FOUL_DRAWN]: {
+    short: 'FD',
+    className: 'bg-lime-100 text-lime-900 border-lime-200',
+    darkClassName: 'bg-lime-900/60 text-lime-200 border-lime-800',
+  },
   [PLAY_EVENT_TYPES.DEFLECTION]: {
     short: 'Def',
     className: 'bg-cyan-100 text-cyan-900 border-cyan-200',
@@ -78,6 +109,11 @@ export const PLAY_EVENT_BADGE_META = {
     short: 'Stl',
     className: 'bg-lime-100 text-lime-900 border-lime-200',
     darkClassName: 'bg-lime-900/60 text-lime-200 border-lime-800',
+  },
+  [PLAY_EVENT_TYPES.NOTE]: {
+    short: 'Note',
+    className: 'bg-slate-100 text-slate-800 border-slate-300',
+    darkClassName: 'bg-slate-700 text-slate-200 border-slate-600',
   },
   [PLAY_EVENT_TYPES.OTHER]: {
     short: 'Other',
@@ -97,9 +133,15 @@ const BADGE_DISPLAY_ORDER = [
   PLAY_EVENT_TYPES.PAINT_TOUCH,
   PLAY_EVENT_TYPES.LIVE_BALL_TOV,
   PLAY_EVENT_TYPES.TURNOVER,
+  PLAY_EVENT_TYPES.OREB,
+  PLAY_EVENT_TYPES.DREB,
   PLAY_EVENT_TYPES.REBOUND,
+  PLAY_EVENT_TYPES.BLOCK,
+  PLAY_EVENT_TYPES.PERSONAL_FOUL,
+  PLAY_EVENT_TYPES.FOUL_DRAWN,
   PLAY_EVENT_TYPES.DEFLECTION,
   PLAY_EVENT_TYPES.STEAL,
+  PLAY_EVENT_TYPES.NOTE,
   PLAY_EVENT_TYPES.OTHER,
 ];
 
@@ -122,9 +164,15 @@ export const FILM_FILTERS = [
   { id: 'paintTouch', label: 'Paint Touch', types: [PLAY_EVENT_TYPES.PAINT_TOUCH] },
   { id: 'turnover', label: 'Turnover', types: [PLAY_EVENT_TYPES.TURNOVER] },
   { id: 'liveBallTov', label: 'LB TOV', types: [PLAY_EVENT_TYPES.LIVE_BALL_TOV] },
+  { id: 'oreb', label: 'OREB', types: [PLAY_EVENT_TYPES.OREB] },
+  { id: 'dreb', label: 'DREB', types: [PLAY_EVENT_TYPES.DREB] },
   { id: 'rebound', label: 'Rebound', types: [PLAY_EVENT_TYPES.REBOUND] },
+  { id: 'block', label: 'Block', types: [PLAY_EVENT_TYPES.BLOCK] },
+  { id: 'personalFoul', label: 'PF', types: [PLAY_EVENT_TYPES.PERSONAL_FOUL] },
+  { id: 'foulDrawn', label: 'Foul Drawn', types: [PLAY_EVENT_TYPES.FOUL_DRAWN] },
   { id: 'deflection', label: 'Deflection', types: [PLAY_EVENT_TYPES.DEFLECTION] },
   { id: 'steal', label: 'Steal', types: [PLAY_EVENT_TYPES.STEAL] },
+  { id: 'note', label: 'Notes', types: [PLAY_EVENT_TYPES.NOTE] },
   { id: 'other', label: 'Other', types: null },
 ];
 
@@ -137,8 +185,18 @@ const TWO_PT_RE = /(?:^|\s)(?:2\s*-?\s*pt|two[- ]?pointer|2pt)(?:\s|$)|make\s*2|
  * Infer structured event types from free-text description.
  * Uses word boundaries to reduce false positives.
  */
+/** Lines starting with "Note:" are custom timestamped observations (not box-score stats). */
+export function isCustomNoteDescription(description) {
+  if (!description || typeof description !== 'string') return false;
+  return /^note:\s*/i.test(description.trim());
+}
+
 export function inferPlayEventTypes(description) {
   if (!description || typeof description !== 'string') return [PLAY_EVENT_TYPES.OTHER];
+
+  if (isCustomNoteDescription(description)) {
+    return [PLAY_EVENT_TYPES.NOTE];
+  }
 
   const lower = description.toLowerCase();
   const types = [];
@@ -158,15 +216,36 @@ export function inferPlayEventTypes(description) {
     types.push(PLAY_EVENT_TYPES.TURNOVER);
   }
 
-  if (/\bdef\s*reb\b|defensive reb|\bdreb\b|\boreb\b/.test(lower)) {
+  if (/\boff(?:ensive)?\s*reb\b|\boreb\b/.test(lower)) {
+    types.push(PLAY_EVENT_TYPES.OREB);
+  }
+  if (/\bdef\s*reb\b|defensive reb|\bdreb\b/.test(lower)) {
+    types.push(PLAY_EVENT_TYPES.DREB);
+  }
+  if (
+    (/\breb\b|\brebound\b/.test(lower) || /\boreb\b/.test(lower)) &&
+    !types.includes(PLAY_EVENT_TYPES.OREB) &&
+    !types.includes(PLAY_EVENT_TYPES.DREB)
+  ) {
     types.push(PLAY_EVENT_TYPES.REBOUND);
-  } else if (/\breb\b|\brebound\b/.test(lower)) {
-    types.push(PLAY_EVENT_TYPES.REBOUND);
+  }
+
+  if (/\bblock\b|\bblk\b/.test(lower)) types.push(PLAY_EVENT_TYPES.BLOCK);
+
+  if (/foul drawn|drawn foul|\bfd\b/.test(lower)) {
+    types.push(PLAY_EVENT_TYPES.FOUL_DRAWN);
+  } else if (/\bpersonal foul\b|\bpf\b/.test(lower)) {
+    types.push(PLAY_EVENT_TYPES.PERSONAL_FOUL);
   }
 
   if (/\bdefl\b|\bdeflection\b/.test(lower)) {
     types.push(PLAY_EVENT_TYPES.DEFLECTION);
-  } else if (/\bdef\b/.test(lower) && !types.includes(PLAY_EVENT_TYPES.REBOUND)) {
+  } else if (
+    /\bdef\b/.test(lower) &&
+    !types.includes(PLAY_EVENT_TYPES.DREB) &&
+    !types.includes(PLAY_EVENT_TYPES.OREB) &&
+    !types.includes(PLAY_EVENT_TYPES.REBOUND)
+  ) {
     types.push(PLAY_EVENT_TYPES.DEFLECTION);
   }
 

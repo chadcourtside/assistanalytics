@@ -45,10 +45,29 @@ describe('inferPlayEventTypes', () => {
     expect(inferPlayEventTypes('10:42 DB TOV')).toContain(PLAY_EVENT_TYPES.TURNOVER);
   });
 
-  it('tags Def Reb as rebound not deflection', () => {
+  it('tags Def Reb as DREB not deflection or generic rebound', () => {
     const types = inferPlayEventTypes('8:12 Def Reb');
-    expect(types).toContain(PLAY_EVENT_TYPES.REBOUND);
+    expect(types).toContain(PLAY_EVENT_TYPES.DREB);
+    expect(types).not.toContain(PLAY_EVENT_TYPES.REBOUND);
     expect(types).not.toContain(PLAY_EVENT_TYPES.DEFLECTION);
+  });
+
+  it('tags Off reb as OREB', () => {
+    expect(inferPlayEventTypes('4:02 Off reb')).toContain(PLAY_EVENT_TYPES.OREB);
+  });
+
+  it('tags block and foul types', () => {
+    expect(inferPlayEventTypes('2:10 Block')).toContain(PLAY_EVENT_TYPES.BLOCK);
+    expect(inferPlayEventTypes('5:00 Personal foul')).toContain(PLAY_EVENT_TYPES.PERSONAL_FOUL);
+    expect(inferPlayEventTypes('6:30 Foul drawn')).toContain(PLAY_EVENT_TYPES.FOUL_DRAWN);
+    expect(inferPlayEventTypes('6:30 Foul drawn')).not.toContain(PLAY_EVENT_TYPES.PERSONAL_FOUL);
+  });
+
+  it('tags Note: lines as note only', () => {
+    const types = inferPlayEventTypes('Note: Great help rotation');
+    expect(types).toEqual([PLAY_EVENT_TYPES.NOTE]);
+    expect(playEventMatchesFilter({ types }, 'note')).toBe(true);
+    expect(isUnclassifiedClip({ types })).toBe(false);
   });
 
   it('tags standalone Def as deflection', () => {

@@ -85,6 +85,8 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                 <TableStatHeader statId="threePm">3PM/A</TableStatHeader>
                 <TableStatHeader statId="efg" className="px-3 py-2 text-blue-600">eFG%</TableStatHeader>
                 <TableStatHeader statId="reb">REB</TableStatHeader>
+                <TableStatHeader statId="oreb">OREB</TableStatHeader>
+                <TableStatHeader statId="blk">BLK</TableStatHeader>
                 <TableStatHeader statId="ast">AST</TableStatHeader>
                 <TableStatHeader statId="stl">STL</TableStatHeader>
                 <TableStatHeader statId="ptch" className="px-3 py-2 text-blue-600">PTCH</TableStatHeader>
@@ -92,6 +94,7 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                 <TableStatHeader statId="liveBallTov">LB TO</TableStatHeader>
                 <TableStatHeader statId="astTo" className="px-3 py-2 font-bold text-blue-600">A/TO</TableStatHeader>
                 <TableStatHeader statId="pf">PF</TableStatHeader>
+                <TableStatHeader statId="foulsDrawn">FD</TableStatHeader>
                 <TableStatHeader statId="plusMinus">+/-</TableStatHeader>
               </tr>
             </thead>
@@ -109,6 +112,8 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                     <td className="px-3 py-2">{s.threePm}/{s.threePa}</td>
                     <td className="px-3 py-2 text-blue-700 font-medium">{efg === null ? '-' : `${efg}%`}</td>
                     <td className="px-3 py-2">{s.reb}</td>
+                    <td className="px-3 py-2">{s.oreb}</td>
+                    <td className="px-3 py-2">{s.blk}</td>
                     <td className="px-3 py-2">{s.ast}</td>
                     <td className="px-3 py-2">{s.stl}</td>
                     <td className="px-3 py-2 font-medium">{s.ptch}</td>
@@ -116,6 +121,7 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                     <td className="px-3 py-2">{s.liveBallTov}</td>
                     <td className="px-3 py-2 font-bold text-blue-700">{ato}</td>
                     <td className="px-3 py-2">{s.pf}</td>
+                    <td className="px-3 py-2">{s.foulsDrawn}</td>
                     <td className={`px-3 py-2 font-bold ${s.plusMinus > 0 ? 'text-green-600' : s.plusMinus < 0 ? 'text-red-600' : ''}`}>
                       {s.plusMinus > 0 ? '+' : ''}{s.plusMinus}
                     </td>
@@ -132,6 +138,8 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                 <td className="px-3 py-3">{totals.threePm}/{totals.threePa}</td>
                 <td className="px-3 py-3 text-blue-700">{eFgTotal}%</td>
                 <td className="px-3 py-3">{totals.reb}</td>
+                <td className="px-3 py-3">{totals.oreb}</td>
+                <td className="px-3 py-3">{totals.blk}</td>
                 <td className="px-3 py-3">{totals.ast}</td>
                 <td className="px-3 py-3">{totals.stl}</td>
                 <td className="px-3 py-3">{totals.ptch}</td>
@@ -139,6 +147,7 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                 <td className="px-3 py-3">{totals.liveBallTov}</td>
                 <td className="px-3 py-3 text-blue-700">{astToTotal}</td>
                 <td className="px-3 py-3">{totals.pf}</td>
+                <td className="px-3 py-3">{totals.foulsDrawn}</td>
                 <td className={`px-3 py-3 ${totals.plusMinus > 0 ? 'text-green-600' : totals.plusMinus < 0 ? 'text-red-600' : ''}`}>
                   {totals.plusMinus > 0 ? '+' : ''}{totals.plusMinus}
                 </td>

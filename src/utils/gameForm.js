@@ -8,7 +8,10 @@ export const STAT_FIELDS = [
   { key: 'fga', label: 'FGA' },
   { key: 'threePm', label: '3PM' },
   { key: 'threePa', label: '3PA' },
+  { key: 'oreb', label: 'OREB' },
+  { key: 'dreb', label: 'DREB' },
   { key: 'reb', label: 'REB' },
+  { key: 'blk', label: 'BLK' },
   { key: 'ast', label: 'AST' },
   { key: 'hqpa', label: 'HQPA' },
   { key: 'tov', label: 'TOV' },
@@ -16,6 +19,7 @@ export const STAT_FIELDS = [
   { key: 'stl', label: 'STL' },
   { key: 'defl', label: 'DEFL' },
   { key: 'pf', label: 'PF' },
+  { key: 'foulsDrawn', label: 'FD' },
   { key: 'ptch', label: 'PTCH' },
   { key: 'plusMinus', label: '+/-' },
 ];

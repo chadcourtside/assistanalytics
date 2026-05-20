@@ -3,7 +3,23 @@ import {
   formatGameTitle,
   formatGameSubtitle,
   formatGameDateDisplay,
+  normalizeGameStats,
 } from './gameStats.js';
+
+describe('normalizeGameStats', () => {
+  it('sums oreb and dreb into reb when reb omitted', () => {
+    const s = normalizeGameStats({ oreb: 2, dreb: 3 });
+    expect(s.oreb).toBe(2);
+    expect(s.dreb).toBe(3);
+    expect(s.reb).toBe(5);
+  });
+
+  it('includes blk and foulsDrawn', () => {
+    const s = normalizeGameStats({ blk: 1, foulsDrawn: 2, fd: 99 });
+    expect(s.blk).toBe(1);
+    expect(s.foulsDrawn).toBe(2);
+  });
+});
 
 describe('game display labels', () => {
   const player = { displayName: 'Avery', team: 'Courtside Elite' };

@@ -7,6 +7,7 @@ import {
 } from '../utils/gameForm';
 import StatHelp from './StatHelp';
 import PlayByPlayTagBar from './PlayByPlayTagBar';
+import { insertPlayByPlayLine } from '../utils/playByPlayForm';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
@@ -15,7 +16,21 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
   const [form, setForm] = useState(() => gameToFormState(game));
   const [errors, setErrors] = useState({});
   const [playTime, setPlayTime] = useState('');
+  const [customNote, setCustomNote] = useState('');
   const playByPlayRef = useRef(null);
+
+  const insertCustomNote = () => {
+    const text = customNote.trim();
+    if (!text) return;
+    const next = insertPlayByPlayLine({
+      currentText: form.playByPlayText,
+      timeStr: playTime,
+      description: `Note: ${text}`,
+      textarea: playByPlayRef.current,
+    });
+    setField('playByPlayText', next);
+    setCustomNote('');
+  };
 
   const title = mode === 'edit' ? 'Edit Game' : 'Add Game';
 
@@ -124,7 +139,7 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
           <div>
             <h3 className="text-sm font-bold text-gray-800 mb-2">Box Score</h3>
             {errors.stats && <p className="text-red-600 text-xs mb-2">{errors.stats}</p>}
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
               {STAT_FIELDS.map(({ key, label }) => (
                 <div key={key}>
                   <label className="block text-xs text-gray-500 text-center mb-1">
@@ -171,13 +186,40 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
               onChange={(text) => setField('playByPlayText', text)}
               textareaRef={playByPlayRef}
             />
+            <div className="flex flex-wrap items-end gap-2 mb-2 p-3 rounded-md border border-dashed border-slate-300 bg-slate-50">
+              <label className="flex-1 min-w-[200px] text-xs text-gray-600">
+                <span className="block font-semibold text-gray-500 uppercase mb-1">
+                  Custom note (timestamped)
+                </span>
+                <input
+                  type="text"
+                  value={customNote}
+                  onChange={(e) => setCustomNote(e.target.value)}
+                  placeholder="e.g. Charge taken, great closeout"
+                  className={`${inputClass} w-full`}
+                  aria-label="Custom play note text"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={insertCustomNote}
+                disabled={!customNote.trim()}
+                className="px-3 py-2 text-xs font-semibold rounded-md border border-slate-300 bg-white hover:bg-slate-100 text-gray-700 disabled:opacity-40"
+              >
+                Add note
+              </button>
+              <p className="w-full text-[11px] text-gray-400">
+                Inserts a line like <span className="font-mono">3:50 Note: your text</span>. Shows in
+                Film Room under Notes — does not affect box score totals.
+              </p>
+            </div>
             <textarea
               ref={playByPlayRef}
               value={form.playByPlayText}
               onChange={(e) => setField('playByPlayText', e.target.value)}
               rows={8}
               className={`${inputClass} font-mono`}
-              placeholder={'0:25 Assist, paint touch\n3:50 Make 3 PT'}
+              placeholder={'0:25 Assist, paint touch\n3:50 Make 3 PT\n4:10 Note: Switched onto #12 after hedge'}
             />
           </div>
         </form>

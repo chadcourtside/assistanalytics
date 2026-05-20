@@ -19,11 +19,25 @@ export const PLAY_BY_PLAY_TAG_GROUPS = [
     ],
   },
   {
+    label: 'Rebounds & blocks',
+    tags: [
+      { label: 'Off reb', line: 'Off reb' },
+      { label: 'Def reb', line: 'Def reb' },
+      { label: 'Block', line: 'Block' },
+    ],
+  },
+  {
     label: 'Defense',
     tags: [
-      { label: 'Def reb', line: 'Def reb' },
       { label: 'Def', line: 'Def' },
       { label: 'Steal', line: 'Steal' },
+    ],
+  },
+  {
+    label: 'Fouls',
+    tags: [
+      { label: 'PF', line: 'Personal foul' },
+      { label: 'Foul drawn', line: 'Foul drawn' },
     ],
   },
   {

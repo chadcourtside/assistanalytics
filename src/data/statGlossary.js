@@ -55,11 +55,32 @@ export const STAT_GLOSSARY = [
     description: 'Shooting efficiency that gives extra weight to three-pointers.',
   },
   {
+    id: 'oreb',
+    abbrev: 'OREB',
+    name: 'Offensive Rebounds',
+    category: 'standard',
+    description: 'Rebounds on the offensive glass. OREB + DREB should match total REB when all three are logged.',
+  },
+  {
+    id: 'dreb',
+    abbrev: 'DREB',
+    name: 'Defensive Rebounds',
+    category: 'standard',
+    description: 'Rebounds on the defensive glass.',
+  },
+  {
     id: 'reb',
     abbrev: 'REB',
     name: 'Rebounds',
     category: 'standard',
-    description: 'Total rebounds (offensive + defensive combined in this app).',
+    description: 'Total rebounds. If OREB and DREB are entered but REB is left blank, REB is computed as their sum.',
+  },
+  {
+    id: 'blk',
+    abbrev: 'BLK',
+    name: 'Blocks',
+    category: 'standard',
+    description: 'Blocked shots.',
   },
   {
     id: 'ast',
@@ -96,6 +117,14 @@ export const STAT_GLOSSARY = [
     name: 'Personal Fouls',
     category: 'standard',
     description: 'Personal fouls committed.',
+  },
+  {
+    id: 'foulsDrawn',
+    abbrev: 'FD',
+    name: 'Fouls Drawn',
+    category: 'standard',
+    description:
+      'Fouls drawn on the opponent (and-ones, shooting fouls drawn, etc.). Tag in play-by-play as “Foul drawn” for film clips.',
   },
   {
     id: 'ptch',
@@ -173,6 +202,8 @@ const aliases = {
   'efg%': 'efg',
   'ast + hqpa': 'astHqpa',
   'initiator lb tov': 'liveBallTov',
+  fd: 'foulsDrawn',
+  'fouls drawn': 'foulsDrawn',
 };
 
 export function getStatEntry(statIdOrKey) {
