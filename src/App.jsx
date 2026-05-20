@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppState } from './hooks/useAppState';
+import RosterTab from './components/RosterTab';
 import DashboardTab from './components/DashboardTab';
 import LogsTab from './components/LogsTab';
 import BenchmarksTab from './components/BenchmarksTab';
@@ -9,10 +10,10 @@ import AddPlayerForm from './components/AddPlayerForm';
 import StatGlossaryButton from './components/StatGlossaryButton';
 import DataTransferMenu from './components/DataTransferMenu';
 
-const TABS = ['Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
+const TABS = ['Roster', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeTab, setActiveTab] = useState('Roster');
   const [filmGameId, setFilmGameId] = useState(null);
   const {
     state,
@@ -26,6 +27,7 @@ export default function App() {
     deleteGame,
     updateGameUrl,
     updateBenchmarkTargets,
+    updatePlayer,
     importAppState,
   } = useAppState();
 
@@ -33,6 +35,12 @@ export default function App() {
     if (!game) return;
     setFilmGameId(game.id);
     setActiveTab('Smart Film Room');
+  };
+
+  const navigateToPlayerTab = (tab, playerId) => {
+    setActivePlayerId(playerId);
+    setActiveTab(tab);
+    if (tab !== 'Smart Film Room') setFilmGameId(null);
   };
 
   return (
@@ -78,18 +86,32 @@ export default function App() {
       </nav>
 
       <main className="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full">
-        {!activePlayer ? (
+        {state.players.length === 0 ? (
           <p className="text-gray-500 text-center py-12">Add a player to get started.</p>
         ) : (
           <>
-            {activeTab === 'Dashboard' && (
+            {activeTab === 'Roster' && (
+              <RosterTab
+                players={state.players}
+                games={state.games}
+                benchmarkSets={state.benchmarkSets}
+                activePlayerId={state.activePlayerId}
+                onSelectPlayer={setActivePlayerId}
+                onUpdatePlayer={updatePlayer}
+                onNavigate={navigateToPlayerTab}
+              />
+            )}
+            {activeTab === 'Dashboard' && activePlayer && (
               <DashboardTab
                 player={activePlayer}
                 games={activePlayerGames}
                 onOpenFilm={openFilmForGame}
               />
             )}
-            {activeTab === 'Game Logs' && (
+            {activeTab === 'Dashboard' && !activePlayer && (
+              <p className="text-gray-500 text-center py-12">Select a player from the Roster or header.</p>
+            )}
+            {activeTab === 'Game Logs' && activePlayer && (
               <LogsTab
                 player={activePlayer}
                 games={activePlayerGames}
@@ -99,7 +121,10 @@ export default function App() {
                 updateGameUrl={updateGameUrl}
               />
             )}
-            {activeTab === 'Benchmarks' && (
+            {activeTab === 'Game Logs' && !activePlayer && (
+              <p className="text-gray-500 text-center py-12">Select a player from the Roster or header.</p>
+            )}
+            {activeTab === 'Benchmarks' && activePlayer && (
               <BenchmarksTab
                 player={activePlayer}
                 games={activePlayerGames}
@@ -107,12 +132,18 @@ export default function App() {
                 onSaveTargets={updateBenchmarkTargets}
               />
             )}
-            {activeTab === 'Smart Film Room' && (
+            {activeTab === 'Benchmarks' && !activePlayer && (
+              <p className="text-gray-500 text-center py-12">Select a player from the Roster or header.</p>
+            )}
+            {activeTab === 'Smart Film Room' && activePlayer && (
               <FilmRoomTab
                 player={activePlayer}
                 games={activePlayerGames}
                 initialGameId={filmGameId}
               />
+            )}
+            {activeTab === 'Smart Film Room' && !activePlayer && (
+              <p className="text-gray-500 text-center py-12">Select a player from the Roster or header.</p>
             )}
           </>
         )}

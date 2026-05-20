@@ -137,6 +137,37 @@ export function useAppState() {
     }));
   }, []);
 
+  const updatePlayer = useCallback((playerId, { firstName, lastName, jerseyNumber, team, position, season }) => {
+    setState((prev) => {
+      const trimmedFirst = (firstName || '').trim();
+      if (!trimmedFirst) return prev;
+
+      const trimmedLast = (lastName || '').trim();
+      const displayName = trimmedLast
+        ? `${trimmedFirst} ${trimmedLast}`
+        : trimmedFirst;
+
+      return {
+        ...prev,
+        players: prev.players.map((p) =>
+          p.id === playerId
+            ? {
+                ...p,
+                firstName: trimmedFirst,
+                lastName: trimmedLast || undefined,
+                displayName,
+                jerseyNumber: jerseyNumber?.trim() || undefined,
+                team: team?.trim() || undefined,
+                position: position?.trim() || undefined,
+                season: season?.trim() || p.season,
+                updatedAt: nowIso(),
+              }
+            : p
+        ),
+      };
+    });
+  }, []);
+
   const importAppState = useCallback((raw, mode) => {
     const { valid, errors, data } = validateImportData(raw);
     if (!valid) {
@@ -164,6 +195,7 @@ export function useAppState() {
     deleteGame,
     updateGameUrl,
     updateBenchmarkTargets,
+    updatePlayer,
     importAppState,
   };
 }

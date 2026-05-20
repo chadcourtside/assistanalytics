@@ -4,7 +4,8 @@ A local-first **multi-player** basketball development app for tracking individua
 
 ## What it does
 
-- **Players** — Add players and switch the active player from the header
+- **Players** — Add players and switch the active player from the header or **Roster** tab
+- **Roster** — Team-grouped player list with season snapshot, key benchmark status, and quick actions
 - **Dashboard** — Last game snapshot, season trend charts, totals, box score, per-24/32 rates, PDF export
 - **Stat Guide** — In-app glossary (header button) plus hover tooltips on stat labels
 - **Game Logs** — Add, edit, and delete games; play-by-play and YouTube timestamp links
@@ -67,13 +68,14 @@ npx wrangler pages deploy dist --project-name=assistanalytics
 ## How to use
 
 1. Start the app — a default player (Avery) with sample games loads on first visit.
-2. Use the **Player** dropdown to switch players, or **+ Add Player** for another kid.
-3. Open **Game Logs**, click **+ Add Game**, and enter box score stats and play-by-play.
-4. Paste a YouTube URL on the game card (or in the game form).
-5. Use **Smart Film Room** to browse clips by structured event type.
-6. Review **Dashboard** for last game, trends, and cumulative stats.
-7. Use **Benchmarks** to compare averages against goals — click **Edit Targets** to customize.
-8. Open **Stat Guide** for metric definitions.
+2. Open **Roster** to see all players by team — use **Edit** to set team names (e.g. `7th Grade Gold`).
+3. Use the **Player** dropdown (grouped by team) or click a name on the Roster to switch players.
+4. Open **Game Logs**, click **+ Add Game**, and enter box score stats and play-by-play.
+5. Paste a YouTube URL on the game card (or in the game form).
+6. Use **Smart Film Room** to browse clips by structured event type.
+7. Review **Dashboard** for last game, trends, and cumulative stats.
+8. Use **Benchmarks** to compare averages against goals — click **Edit Targets** to customize.
+9. Open **Stat Guide** for metric definitions.
 
 ### Moving between devices (recommended workflow)
 

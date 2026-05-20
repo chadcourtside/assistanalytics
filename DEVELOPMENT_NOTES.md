@@ -54,6 +54,9 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 | `src/utils/playEvents.js` | Parse play-by-play → structured event types |
 | `src/utils/gameTrends.js` | Per-game series for dashboard charts |
 | `src/storage/migrateState.js` | Schema upgrades + game normalization |
+| `src/components/RosterTab.jsx` | Team-grouped roster with quick actions |
+| `src/components/EditPlayerModal.jsx` | Edit player team, jersey, name |
+| `src/utils/roster.js` | Group by team, roster summary stats |
 | `src/components/DataTransferMenu.jsx` | Export / Import header UI |
 | `src/components/LastGamePanel.jsx` | Dashboard last-game snapshot |
 | `src/components/TrendCharts.jsx` | SVG season trend charts |
@@ -100,7 +103,7 @@ Recommended tags when logging: **Assist**, **HQPA**, **Paint touch**, **Make/Mis
 ## Next steps
 
 1. Optional cloud sync (Cloudflare D1/KV)
-2. Coach roster / team grouping
+2. Duplicate-last-game / faster mobile game entry
 3. TypeScript migration + broader test coverage
 
 ## Original prototype
