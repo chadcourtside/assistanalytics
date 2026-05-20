@@ -144,7 +144,8 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
               Play-by-play
             </label>
             <p className="text-xs text-gray-400 mb-2">
-              One event per line with timestamp (e.g. 3:50 Make 2 PT). Tags like Assist, Paint touch, LB TOV drive Film Room filters.
+              One event per line with timestamp (e.g. 3:50 Make 3 PT). Use: Make/Miss 2 PT or 3 PT, Assist, HQPA,
+              Paint touch, TOV, LB TOV, Def reb, Def, Steal — each maps to a Smart Film Room filter.
             </p>
             <textarea
               value={form.playByPlayText}

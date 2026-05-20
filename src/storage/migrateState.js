@@ -4,10 +4,7 @@ import { playEventsFromPlayByPlay } from '../utils/playEvents';
 
 function normalizeGame(game) {
   const playByPlay = Array.isArray(game.playByPlay) ? game.playByPlay : [];
-  const playEvents =
-    Array.isArray(game.playEvents) && game.playEvents.length > 0
-      ? game.playEvents
-      : playEventsFromPlayByPlay(playByPlay);
+  const playEvents = playEventsFromPlayByPlay(playByPlay);
 
   return {
     ...game,

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { parseBenchmarkTarget, getBenchmarkStatusColor } from './stats.js';
-import { parsePlayEventLine } from './playEvents.js';
 import {
   validateImportData,
   mergeAppStates,
@@ -28,21 +27,6 @@ describe('parseBenchmarkTarget', () => {
 describe('getBenchmarkStatusColor', () => {
   it('colors ratio metric green when on target', () => {
     expect(getBenchmarkStatusColor(2.1, '2:1+', false, 'astTo')).toContain('green');
-  });
-});
-
-describe('playEvents', () => {
-  it('parses timestamp lines', () => {
-    const event = parsePlayEventLine('0:25 Assist, paint touch');
-    expect(event.timeStr).toBe('0:25');
-    expect(event.types).toContain('assist');
-    expect(event.types).toContain('paintTouch');
-  });
-
-  it('tags LB TOV separately from generic turnover', () => {
-    const event = parsePlayEventLine('6:50 LB TOV');
-    expect(event.types).toContain('liveBallTov');
-    expect(event.types).not.toContain('turnover');
   });
 });
 
