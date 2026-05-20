@@ -1,4 +1,5 @@
 import { normalizeGameStats } from './gameStats';
+import { playEventsFromPlayByPlay } from './playEvents';
 
 export const STAT_FIELDS = [
   { key: 'mins', label: 'MIN' },
@@ -88,6 +89,7 @@ export function validateGameForm(form) {
 }
 
 export function buildGamePayload(form, stats) {
+  const playByPlay = parsePlayByPlayText(form.playByPlayText);
   return {
     date: form.date?.trim() || '',
     opponent: form.opponent.trim(),
@@ -95,6 +97,7 @@ export function buildGamePayload(form, stats) {
     competition: form.competition?.trim() || undefined,
     videoUrl: form.videoUrl?.trim() || '',
     stats,
-    playByPlay: parsePlayByPlayText(form.playByPlayText),
+    playByPlay,
+    playEvents: playEventsFromPlayByPlay(playByPlay),
   };
 }

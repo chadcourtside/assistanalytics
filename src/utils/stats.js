@@ -48,12 +48,34 @@ export function getBenchmarkMetricValue(metricKey, averages) {
   return undefined;
 }
 
-export function parseBenchmarkTarget(targetStr) {
+/**
+ * Parse a benchmark target string into a numeric threshold for status coloring.
+ * Supports ranges, percentages, ratios (2:1+), ≤ caps, and "Near Zero".
+ */
+export function parseBenchmarkTarget(targetStr, options = {}) {
   if (!targetStr || typeof targetStr !== 'string') return null;
 
   const trimmed = targetStr.trim();
-  if (/near\s*zero/i.test(trimmed)) return null;
-  if (trimmed.includes(':')) return null;
+  const { isLowerBetter = false, metricKey = '' } = options;
+
+  if (/near\s*zero/i.test(trimmed)) {
+    return isLowerBetter || metricKey === 'liveBallTov' ? 0.25 : null;
+  }
+
+  const ratioMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*:\s*1\s*\+?$/);
+  if (ratioMatch) {
+    return parseFloat(ratioMatch[1]);
+  }
+
+  const pctRangeMatch = trimmed.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*%/);
+  if (pctRangeMatch) {
+    return parseFloat(pctRangeMatch[2]);
+  }
+
+  const pctPlusMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*%\s*\+?$/);
+  if (pctPlusMatch) {
+    return parseFloat(pctPlusMatch[1]);
+  }
 
   const rangeMatch = trimmed.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
   if (rangeMatch) {
@@ -78,9 +100,9 @@ export function parseBenchmarkTarget(targetStr) {
   return null;
 }
 
-export function getBenchmarkStatusColor(currentVal, target12, isLowerBetter = false) {
+export function getBenchmarkStatusColor(currentVal, target12, isLowerBetter = false, metricKey = '') {
   const v = parseFloat(currentVal);
-  const t = parseBenchmarkTarget(target12);
+  const t = parseBenchmarkTarget(target12, { isLowerBetter, metricKey });
 
   if (isNaN(v) || t === null) {
     return 'bg-gray-100 text-gray-700';

@@ -3,7 +3,22 @@ import { loadState } from '../storage/loadState';
 import { saveState } from '../storage/saveState';
 import { createBenchmarkSet } from '../data/defaultBenchmarkTargets';
 import { sortGamesNewestFirst } from '../utils/gameStats';
+import { playEventsFromPlayByPlay } from '../utils/playEvents';
+import {
+  mergeAppStates,
+  replaceAppState,
+  validateImportData,
+} from '../utils/importExport';
 import { createPlayerId, createBenchmarkId, createGameId, nowIso } from '../models/appState';
+
+function enrichGamePayload(payload) {
+  const playByPlay = payload.playByPlay ?? [];
+  return {
+    ...payload,
+    playByPlay,
+    playEvents: payload.playEvents ?? playEventsFromPlayByPlay(playByPlay),
+  };
+}
 
 export function useAppState() {
   const [state, setState] = useState(loadState);
@@ -77,7 +92,7 @@ export function useAppState() {
       const game = {
         id: createGameId(),
         playerId: prev.activePlayerId,
-        ...payload,
+        ...enrichGamePayload(payload),
         createdAt: ts,
         updatedAt: ts,
       };
@@ -93,7 +108,7 @@ export function useAppState() {
         ...prev,
         games: prev.games.map((g) =>
           g.id === gameId && g.playerId === prev.activePlayerId
-            ? { ...g, ...payload, updatedAt: ts }
+            ? { ...g, ...enrichGamePayload(payload), updatedAt: ts }
             : g
         ),
       };
@@ -113,6 +128,30 @@ export function useAppState() {
     updateGame(gameId, { videoUrl: url });
   }, [updateGame]);
 
+  const updateBenchmarkTargets = useCallback((playerId, targets) => {
+    setState((prev) => ({
+      ...prev,
+      benchmarkSets: prev.benchmarkSets.map((b) =>
+        b.playerId === playerId ? { ...b, targets } : b
+      ),
+    }));
+  }, []);
+
+  const importAppState = useCallback((raw, mode) => {
+    const { valid, errors, data } = validateImportData(raw);
+    if (!valid) {
+      return { success: false, errors };
+    }
+
+    setState((prev) => {
+      const next =
+        mode === 'merge' ? mergeAppStates(prev, data) : replaceAppState(data);
+      return next;
+    });
+
+    return { success: true, errors: [] };
+  }, []);
+
   return {
     state,
     activePlayer,
@@ -124,5 +163,7 @@ export function useAppState() {
     updateGame,
     deleteGame,
     updateGameUrl,
+    updateBenchmarkTargets,
+    importAppState,
   };
 }

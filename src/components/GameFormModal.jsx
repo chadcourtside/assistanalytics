@@ -144,7 +144,7 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
               Play-by-play
             </label>
             <p className="text-xs text-gray-400 mb-2">
-              One event per line. Include timestamps like 3:50 for film links.
+              One event per line with timestamp (e.g. 3:50 Make 2 PT). Tags like Assist, Paint touch, LB TOV drive Film Room filters.
             </p>
             <textarea
               value={form.playByPlayText}

@@ -5,7 +5,7 @@
 ```mermaid
 flowchart TB
   subgraph storage [localStorage]
-    state[assistanalytics-state schema v1]
+    state[assistanalytics-state schema v2]
   end
   subgraph react [React app]
     useApp[useAppState]
@@ -20,14 +20,15 @@ flowchart TB
 
 - **Entry:** `index.html` → `src/main.jsx` → `src/App.jsx`
 - **State:** Single `AppState` blob with `players`, `games`, `benchmarkSets`, `activePlayerId`
-- **Legacy:** Reads `averyGames` or `assistanalytics-games` once, migrates to v1, then uses `assistanalytics-state` only
+- **Legacy:** Reads `averyGames` or `assistanalytics-games` once, migrates to v2, then uses `assistanalytics-state` only
 - **No router** — tab switching via `activeTab` string state
+- **Device transfer:** JSON export/import via header buttons (`src/utils/importExport.js`)
 
-## AppState (schema version 1)
+## AppState (schema version 2)
 
 ```js
 {
-  schemaVersion: 1,
+  schemaVersion: 2,
   activePlayerId: string | null,
   players: Player[],
   games: Game[],
@@ -36,8 +37,11 @@ flowchart TB
 ```
 
 - **Player** — `id`, `firstName`, `displayName`, optional profile fields, timestamps
-- **Game** — `id`, `playerId`, `date`, `opponent`, `stats`, `playByPlay`, `competition`, `videoUrl`, timestamps
-- **BenchmarkSet** — one per player; `targets[]` drives Benchmarks tab
+- **Game** — `id`, `playerId`, `date`, `opponent`, `stats`, `playByPlay`, `playEvents`, `competition`, `videoUrl`, timestamps
+- **BenchmarkSet** — one per player; `targets[]` drives Benchmarks tab (editable in UI)
+- **PlayEvent** — `{ timeStr, seconds, description, types[], raw }` parsed from play-by-play lines
+
+Migration: `src/storage/migrateState.js` upgrades v1 → v2 (adds `playEvents` to games).
 
 Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-avery-3`.
 
@@ -45,55 +49,59 @@ Default player id: `player-avery-default`. Seed games: `game-avery-1` … `game-
 
 | Path | Purpose |
 |------|---------|
-| `src/hooks/useAppState.js` | Load/save AppState, players, games CRUD, video URL |
-| `src/components/GameFormModal.jsx` | Add/edit game form (stats + play-by-play) |
+| `src/hooks/useAppState.js` | Load/save AppState, CRUD, import/export, benchmark targets |
+| `src/utils/importExport.js` | JSON backup serialize, validate, merge/replace |
+| `src/utils/playEvents.js` | Parse play-by-play → structured event types |
+| `src/utils/gameTrends.js` | Per-game series for dashboard charts |
+| `src/storage/migrateState.js` | Schema upgrades + game normalization |
+| `src/components/DataTransferMenu.jsx` | Export / Import header UI |
+| `src/components/LastGamePanel.jsx` | Dashboard last-game snapshot |
+| `src/components/TrendCharts.jsx` | SVG season trend charts |
+| `src/components/GameFormModal.jsx` | Add/edit game form |
 | `src/utils/gameForm.js` | Form validation and stat field definitions |
 | `src/storage/loadState.js` | Load + migrate legacy storage |
-| `src/storage/saveState.js` | Persist AppState |
-| `src/storage/migrateLegacyGames.js` | Legacy games array → v1 |
-| `src/data/defaultAppState.js` | Fresh-install seed |
-| `src/data/defaultBenchmarkTargets.js` | Benchmark rows cloned per new player |
-| `src/utils/gameStats.js` | Normalize stats; legacy `tpm`/`lbTov`/`oreb` support |
-| `src/utils/migrateGame.js` | Legacy game → v1 Game |
+| `src/data/statGlossary.js` | Stat definitions for Stat Guide |
 | `src/utils/stats.js` | Aggregations, eFG%, benchmark parsing |
-| `src/components/PlayerSelector.jsx` | Header player dropdown |
-| `src/components/AddPlayerForm.jsx` | Create player + benchmark set |
-| `src/data/statGlossary.js` | Stat definitions (standard + custom) |
-| `src/components/StatHelp.jsx` | Dotted underline + `title` tooltip |
-| `src/components/StatGlossaryModal.jsx` | Full glossary modal |
-| `src/components/StatGlossaryButton.jsx` | Header “Stat Guide” trigger |
-| `src/components/TableStatHeader.jsx` | Table `<th>` with StatHelp |
+| `src/utils/stats.test.js` | Vitest unit tests |
 
 ## Stat glossary (UI)
 
-- **Source of truth:** `src/data/statGlossary.js` — edit here to change tooltips and the Stat Guide modal.
-- **Inline help:** `StatHelp` with `statId` matching glossary `id` (or benchmark `metricKey`).
-- **Custom stats** are labeled in the modal; descriptions are app tracking conventions, not NBA official stats.
+- **Source of truth:** `src/data/statGlossary.js`
+- **Inline help:** `StatHelp` with `statId` matching glossary `id`
 
-Legacy reference (formulas also live in `src/utils/stats.js`):
+## Play events & Film Room
 
-| Stat | Definition |
-|------|------------|
-| **eFG%** | `(FGM + 0.5 × 3PM) / FGA × 100` |
-| **AST/TO** | `assists / turnovers` when TOV > 0; else raw assist count |
-| **Per 24 / 32** | `(stat / minutes) × base` |
-| **3PT%** | `threePm / threePa × 100` |
-| **REB** | Single `reb` field (legacy oreb+dreb summed on migrate) |
-| **PTCH / HQPA / liveBallTov / DEFL / +/-** | See `statGlossary.js` custom entries |
+Play-by-play lines like `3:50 Make 2 PT, paint touch` are parsed into structured types (`make`, `paintTouch`, etc.) in `playEvents.js`. Film Room filters match on `types[]` instead of raw substring search, reducing false positives on words like "def".
+
+Recommended tags when logging: **Assist**, **HQPA**, **Paint touch**, **Make/Miss**, **LB TOV**, **Steal**, **Reb**, **Def**.
+
+## Benchmark parsing
+
+`parseBenchmarkTarget()` in `stats.js` handles:
+
+- Ranges (`8 - 14` → upper bound)
+- Percent ranges (`35 - 38%+`)
+- Ratios (`2:1+` → 2.0)
+- Caps (`≤ 2`)
+- Near Zero (→ 0.25 for live-ball TOV / lower-is-better metrics)
 
 ## Fragile areas
 
-1. **Benchmark parsing** — Non-numeric targets stay neutral gray
-2. **Film filters** — Substring matching on play text
-3. **Hooks** — `FilmRoomTab` must call hooks before any early return
-4. **Schema** — Bump `schemaVersion` and add migration when shape changes
+1. **Import merge** — Adds entities by id only; duplicate players with different ids are not deduplicated by name
+2. **Hooks** — `FilmRoomTab` must call hooks before any early return
+3. **Schema** — Bump `schemaVersion` and extend `migrateState.js` when shape changes
 
-## Next steps (Phase 0+)
+## Cloudflare Pages
 
-1. JSON import/export
-2. Benchmark target editor in UI
-3. Structured play events
-5. TypeScript + tests for `stats.js`
+- Build output: `dist/`
+- SPA fallback: `public/_redirects`
+- Config stub: `wrangler.toml`
+
+## Next steps
+
+1. Optional cloud sync (Cloudflare D1/KV)
+2. Coach roster / team grouping
+3. TypeScript migration + broader test coverage
 
 ## Original prototype
 

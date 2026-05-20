@@ -1,11 +1,13 @@
 import StatCard from './StatCard';
 import TableStatHeader from './TableStatHeader';
 import StatHelp from './StatHelp';
+import LastGamePanel from './LastGamePanel';
+import TrendCharts from './TrendCharts';
 import { exportPDF } from '../utils/exportPdf';
 import { sumGameStats, calcEFG, calcAstTo, calcPer } from '../utils/stats';
 import { normalizeGameStats } from '../utils/gameStats';
 
-export default function DashboardTab({ player, games }) {
+export default function DashboardTab({ player, games, onOpenFilm }) {
   const totals = sumGameStats(games);
   const gms = games.length || 1;
   const eFgTotal = calcEFG(totals.fgm, totals.threePm, totals.fga) ?? 0;
@@ -39,6 +41,8 @@ export default function DashboardTab({ player, games }) {
           Print Dashboard
         </button>
       </div>
+      <LastGamePanel game={games[0]} onOpenFilm={onOpenFilm} />
+      <TrendCharts games={games} />
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         <StatCard statId="mins" label="Total Mins" value={totals.mins || 0} sub={`${(totals.mins / gms).toFixed(1)}/g`} bold />
         <StatCard statId="pts" label="Total Pts" value={totals.pts || 0} sub={`${(totals.pts / gms).toFixed(1)}/g`} bold />

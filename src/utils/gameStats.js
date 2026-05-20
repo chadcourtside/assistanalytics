@@ -43,3 +43,11 @@ export function sortGamesNewestFirst(games) {
     return db.localeCompare(da);
   });
 }
+
+export function sortGamesOldestFirst(games) {
+  return [...games].sort((a, b) => {
+    const da = a.date || a.createdAt || '';
+    const db = b.date || b.createdAt || '';
+    return da.localeCompare(db);
+  });
+}

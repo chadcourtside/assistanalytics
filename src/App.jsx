@@ -7,11 +7,13 @@ import FilmRoomTab from './components/FilmRoomTab';
 import PlayerSelector from './components/PlayerSelector';
 import AddPlayerForm from './components/AddPlayerForm';
 import StatGlossaryButton from './components/StatGlossaryButton';
+import DataTransferMenu from './components/DataTransferMenu';
 
 const TABS = ['Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [filmGameId, setFilmGameId] = useState(null);
   const {
     state,
     activePlayer,
@@ -23,7 +25,15 @@ export default function App() {
     updateGame,
     deleteGame,
     updateGameUrl,
+    updateBenchmarkTargets,
+    importAppState,
   } = useAppState();
+
+  const openFilmForGame = (game) => {
+    if (!game) return;
+    setFilmGameId(game.id);
+    setActiveTab('Smart Film Room');
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -42,6 +52,7 @@ export default function App() {
               activePlayerId={state.activePlayerId}
               onSelect={setActivePlayerId}
             />
+            <DataTransferMenu state={state} onImport={importAppState} />
             <StatGlossaryButton />
             <AddPlayerForm onAdd={addPlayer} />
           </div>
@@ -54,7 +65,10 @@ export default function App() {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                setActiveTab(tab);
+                if (tab !== 'Smart Film Room') setFilmGameId(null);
+              }}
               className={`whitespace-nowrap px-6 py-4 font-semibold text-sm transition-colors border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'}`}
             >
               {tab}
@@ -69,7 +83,11 @@ export default function App() {
         ) : (
           <>
             {activeTab === 'Dashboard' && (
-              <DashboardTab player={activePlayer} games={activePlayerGames} />
+              <DashboardTab
+                player={activePlayer}
+                games={activePlayerGames}
+                onOpenFilm={openFilmForGame}
+              />
             )}
             {activeTab === 'Game Logs' && (
               <LogsTab
@@ -86,10 +104,15 @@ export default function App() {
                 player={activePlayer}
                 games={activePlayerGames}
                 benchmarkSet={activeBenchmarkSet}
+                onSaveTargets={updateBenchmarkTargets}
               />
             )}
             {activeTab === 'Smart Film Room' && (
-              <FilmRoomTab player={activePlayer} games={activePlayerGames} />
+              <FilmRoomTab
+                player={activePlayer}
+                games={activePlayerGames}
+                initialGameId={filmGameId}
+              />
             )}
           </>
         )}

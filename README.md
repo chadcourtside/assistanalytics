@@ -1,17 +1,18 @@
 # Assist Analytics
 
-A local-first **multi-player** basketball development app for tracking individual game stats, development benchmarks, and film-linked play-by-play. Each player has separate games, benchmarks, and film data.
+A local-first **multi-player** basketball development app for tracking individual game stats, development benchmarks, and film-linked play-by-play. Built for parents tracking a few players today and coaches managing full rosters during the school season.
 
 ## What it does
 
 - **Players** — Add players and switch the active player from the header
-- **Dashboard** — Season totals, per-game box score, eFG%, per-24/32 minute rates, PDF export (per active player)
+- **Dashboard** — Last game snapshot, season trend charts, totals, box score, per-24/32 rates, PDF export
 - **Stat Guide** — In-app glossary (header button) plus hover tooltips on stat labels
 - **Game Logs** — Add, edit, and delete games; play-by-play and YouTube timestamp links
-- **Benchmarks** — Per-player development targets vs season averages
-- **Smart Film Room** — Filterable clip playlist with embedded YouTube playback
+- **Benchmarks** — Per-player development targets vs season averages; **edit targets in the UI**
+- **Smart Film Room** — Structured play-event filters with embedded YouTube playback
+- **Export / Import** — JSON backup for moving data between devices (phone ↔ laptop)
 
-Data is stored in your browser (`localStorage`, schema version 1). No backend or account required.
+Data is stored in your browser (`localStorage`, schema version 2). No account required. Use **Export** before switching devices, then **Import → Replace** on the new device.
 
 ## Tech stack
 
@@ -22,6 +23,7 @@ Data is stored in your browser (`localStorage`, schema version 1). No backend or
 | Styling | Tailwind CSS 4 |
 | PDF export | html2pdf.js |
 | Storage | Browser localStorage |
+| Hosting | Cloudflare Pages (static) |
 
 ## Install
 
@@ -37,39 +39,60 @@ npm run dev
 
 Open the URL shown in the terminal (typically `http://localhost:5173`).
 
-## Build for production
+## Build & test
 
 ```bash
 npm run build
 npm run preview
+npm test
+```
+
+## Deploy to Cloudflare Pages
+
+1. Push this repo to GitHub.
+2. In [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **Create** → **Pages** → Connect Git.
+3. Build settings:
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist`
+   - **Node version:** 20 (or latest LTS)
+4. Deploy. SPA routing is handled by `public/_redirects`.
+
+Alternatively, with Wrangler CLI:
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name=assistanalytics
 ```
 
 ## How to use
 
 1. Start the app — a default player (Avery) with sample games loads on first visit.
-2. Use the **Player** dropdown in the header to switch players, or **+ Add Player** to create another.
+2. Use the **Player** dropdown to switch players, or **+ Add Player** for another kid.
 3. Open **Game Logs**, click **+ Add Game**, and enter box score stats and play-by-play.
 4. Paste a YouTube URL on the game card (or in the game form).
-5. Click timestamp links in play-by-play to jump to film, or use **Smart Film Room** to browse clips by type.
-6. Review **Dashboard** for cumulative stats and print/PDF export.
-7. Use **Benchmarks** to compare season averages against development goals.
-8. Open **Stat Guide** in the header (or hover dotted stat labels) for definitions of standard and custom metrics.
+5. Use **Smart Film Room** to browse clips by structured event type.
+6. Review **Dashboard** for last game, trends, and cumulative stats.
+7. Use **Benchmarks** to compare averages against goals — click **Edit Targets** to customize.
+8. Open **Stat Guide** for metric definitions.
+
+### Moving between devices (recommended workflow)
+
+1. On the device with your latest data, click **Export** in the header → saves a `.json` backup.
+2. On the new device, open the app and click **Import** → choose the file → **Replace**.
+3. For combining partial exports (e.g. two coaches), use **Merge** instead of Replace.
 
 ## Known limitations
 
-- **No JSON import/export yet** — Backup and transfer between devices coming soon.
+- **No cloud sync** — Data stays in the browser until you export/import. Export regularly during the season.
 - **Legacy migration** — Old saves (`averyGames` or `assistanalytics-games`) migrate into the default Avery player on first load.
-- **Custom metrics** — PTCH, HQPA, LB TOV, and DEFL use app-specific definitions in the Stat Guide (not official NBA stats).
-- **Benchmark colors** — Non-numeric targets (e.g. "Near Zero", "2:1+") show neutral status; numeric targets drive green/yellow highlighting.
-- **Film filters** — Keyword-based matching on play descriptions; may produce false positives (e.g. "def" in unrelated text).
+- **Film filters** — Parsed from play-by-play keywords; use consistent tags (Assist, Paint touch, LB TOV) for best results.
 - **YouTube** — Requires internet for video embeds and links.
 
 ## Next improvement ideas
 
-- JSON import/export for backup
-- Benchmark target editor in the UI
-- Trend charts (season progression)
-- Smarter benchmark target parsing for ranges and ratios
+- Optional cloud sync (Cloudflare KV / D1)
+- Roster / team views for coaches
+- Smarter benchmark target parsing for edge-case strings
 
 ## Repository
 

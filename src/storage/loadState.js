@@ -6,6 +6,7 @@ import {
   LEGACY_AVERY_KEY,
 } from '../models/appState';
 import { migrateLegacyGamesArray } from './migrateLegacyGames';
+import { migrateState } from './migrateState';
 
 function repairActivePlayer(state) {
   const { players, activePlayerId } = state;
@@ -21,8 +22,8 @@ function repairActivePlayer(state) {
 
 function parseStoredState(raw) {
   const parsed = JSON.parse(raw);
-  if (parsed.schemaVersion === SCHEMA_VERSION) {
-    return repairActivePlayer(parsed);
+  if (parsed.schemaVersion && parsed.schemaVersion <= SCHEMA_VERSION) {
+    return repairActivePlayer(migrateState(parsed));
   }
   return null;
 }
@@ -37,12 +38,12 @@ export function loadState() {
 
     const legacyGames = localStorage.getItem(LEGACY_GAMES_KEY);
     if (legacyGames) {
-      return migrateLegacyGamesArray(JSON.parse(legacyGames));
+      return repairActivePlayer(migrateState(migrateLegacyGamesArray(JSON.parse(legacyGames))));
     }
 
     const legacyAvery = localStorage.getItem(LEGACY_AVERY_KEY);
     if (legacyAvery) {
-      return migrateLegacyGamesArray(JSON.parse(legacyAvery));
+      return repairActivePlayer(migrateState(migrateLegacyGamesArray(JSON.parse(legacyAvery))));
     }
   } catch {
     // fall through to default

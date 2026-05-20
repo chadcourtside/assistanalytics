@@ -6,6 +6,7 @@ import {
 } from '../models/appState';
 import { createBenchmarkSet } from './defaultBenchmarkTargets';
 import { migrateLegacyGame } from '../utils/migrateGame';
+import { migrateState } from '../storage/migrateState';
 
 /** Legacy-shaped seed games (migrated on build). */
 const LEGACY_SEED_GAMES = [
@@ -71,11 +72,11 @@ export function createDefaultAppState() {
   const games = LEGACY_SEED_GAMES.map((g) => migrateLegacyGame(g, DEFAULT_PLAYER_ID));
   const benchmarkSets = [createBenchmarkSet(DEFAULT_PLAYER_ID, DEFAULT_BENCHMARK_ID)];
 
-  return {
+  return migrateState({
     schemaVersion: SCHEMA_VERSION,
     activePlayerId: DEFAULT_PLAYER_ID,
     players: [player],
     games,
     benchmarkSets,
-  };
+  });
 }
