@@ -17,6 +17,100 @@ export const PLAY_EVENT_TYPES = {
   OTHER: 'other',
 };
 
+/** Short labels and colors for clip type badges in the film playlist. */
+export const PLAY_EVENT_BADGE_META = {
+  [PLAY_EVENT_TYPES.MAKE]: {
+    short: 'Make',
+    className: 'bg-green-100 text-green-800 border-green-200',
+    darkClassName: 'bg-green-900/60 text-green-200 border-green-800',
+  },
+  [PLAY_EVENT_TYPES.MISS]: {
+    short: 'Miss',
+    className: 'bg-red-100 text-red-800 border-red-200',
+    darkClassName: 'bg-red-900/60 text-red-200 border-red-800',
+  },
+  [PLAY_EVENT_TYPES.TWO_PT]: {
+    short: '2PT',
+    className: 'bg-sky-100 text-sky-800 border-sky-200',
+    darkClassName: 'bg-sky-900/60 text-sky-200 border-sky-800',
+  },
+  [PLAY_EVENT_TYPES.THREE_PT]: {
+    short: '3PT',
+    className: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    darkClassName: 'bg-indigo-900/60 text-indigo-200 border-indigo-800',
+  },
+  [PLAY_EVENT_TYPES.ASSIST]: {
+    short: 'Ast',
+    className: 'bg-blue-100 text-blue-800 border-blue-200',
+    darkClassName: 'bg-blue-900/60 text-blue-200 border-blue-800',
+  },
+  [PLAY_EVENT_TYPES.HQPA]: {
+    short: 'HQPA',
+    className: 'bg-violet-100 text-violet-800 border-violet-200',
+    darkClassName: 'bg-violet-900/60 text-violet-200 border-violet-800',
+  },
+  [PLAY_EVENT_TYPES.PAINT_TOUCH]: {
+    short: 'PTCH',
+    className: 'bg-amber-100 text-amber-900 border-amber-200',
+    darkClassName: 'bg-amber-900/60 text-amber-200 border-amber-800',
+  },
+  [PLAY_EVENT_TYPES.TURNOVER]: {
+    short: 'TOV',
+    className: 'bg-orange-100 text-orange-900 border-orange-200',
+    darkClassName: 'bg-orange-900/60 text-orange-200 border-orange-800',
+  },
+  [PLAY_EVENT_TYPES.LIVE_BALL_TOV]: {
+    short: 'LB TOV',
+    className: 'bg-rose-100 text-rose-900 border-rose-200',
+    darkClassName: 'bg-rose-900/60 text-rose-200 border-rose-800',
+  },
+  [PLAY_EVENT_TYPES.REBOUND]: {
+    short: 'Reb',
+    className: 'bg-teal-100 text-teal-900 border-teal-200',
+    darkClassName: 'bg-teal-900/60 text-teal-200 border-teal-800',
+  },
+  [PLAY_EVENT_TYPES.DEFLECTION]: {
+    short: 'Def',
+    className: 'bg-cyan-100 text-cyan-900 border-cyan-200',
+    darkClassName: 'bg-cyan-900/60 text-cyan-200 border-cyan-800',
+  },
+  [PLAY_EVENT_TYPES.STEAL]: {
+    short: 'Stl',
+    className: 'bg-lime-100 text-lime-900 border-lime-200',
+    darkClassName: 'bg-lime-900/60 text-lime-200 border-lime-800',
+  },
+  [PLAY_EVENT_TYPES.OTHER]: {
+    short: 'Other',
+    className: 'bg-gray-100 text-gray-600 border-gray-200',
+    darkClassName: 'bg-slate-700 text-slate-300 border-slate-600',
+  },
+};
+
+/** Display order when a clip has multiple tags. */
+const BADGE_DISPLAY_ORDER = [
+  PLAY_EVENT_TYPES.THREE_PT,
+  PLAY_EVENT_TYPES.TWO_PT,
+  PLAY_EVENT_TYPES.MAKE,
+  PLAY_EVENT_TYPES.MISS,
+  PLAY_EVENT_TYPES.ASSIST,
+  PLAY_EVENT_TYPES.HQPA,
+  PLAY_EVENT_TYPES.PAINT_TOUCH,
+  PLAY_EVENT_TYPES.LIVE_BALL_TOV,
+  PLAY_EVENT_TYPES.TURNOVER,
+  PLAY_EVENT_TYPES.REBOUND,
+  PLAY_EVENT_TYPES.DEFLECTION,
+  PLAY_EVENT_TYPES.STEAL,
+  PLAY_EVENT_TYPES.OTHER,
+];
+
+export function getSortedTypeBadges(types) {
+  const set = new Set(types ?? []);
+  return BADGE_DISPLAY_ORDER.filter((t) => set.has(t) && PLAY_EVENT_BADGE_META[t]).map((t) => ({
+    type: t,
+    ...PLAY_EVENT_BADGE_META[t],
+  }));
+}
+
 export const FILM_FILTERS = [
   { id: 'all', label: 'All', types: null },
   { id: 'make', label: 'Make', types: [PLAY_EVENT_TYPES.MAKE] },

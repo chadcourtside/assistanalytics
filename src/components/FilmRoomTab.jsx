@@ -14,6 +14,7 @@ import {
   playEventsFromPlayByPlay,
   countClipsForFilter,
 } from '../utils/playEvents';
+import ClipTypeBadges from './ClipTypeBadges';
 
 function buildClipsFromGames(games) {
   return games.reduce((acc, game) => {
@@ -195,6 +196,7 @@ export default function FilmRoomTab({ player, games, initialGameId = null }) {
                       vs {currentClip.opponent} · @ {currentClip.timeStr}
                       {positionLabel && <span className="text-slate-500"> · {positionLabel}</span>}
                     </p>
+                    <ClipTypeBadges types={currentClip.types} variant="dark" className="mt-2" />
                   </div>
                 </div>
 
@@ -335,6 +337,7 @@ export default function FilmRoomTab({ player, games, initialGameId = null }) {
                       <span>{clip.timeStr}</span>
                     </div>
                     <div className="flex-1 min-w-0">
+                      <ClipTypeBadges types={clip.types} className="mb-1" />
                       <p
                         className={`font-semibold truncate text-sm ${isActive ? 'text-blue-900' : 'text-gray-800'}`}
                       >

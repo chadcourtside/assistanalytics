@@ -5,6 +5,7 @@ import {
   playEventMatchesFilter,
   isUnclassifiedClip,
   countClipsForFilter,
+  getSortedTypeBadges,
   PLAY_EVENT_TYPES,
 } from './playEvents.js';
 
@@ -71,6 +72,17 @@ describe('parsePlayEventLine', () => {
     const event = parsePlayEventLine('[3:50] Make 2 PT');
     expect(event.timeStr).toBe('3:50');
     expect(event.types).toContain(PLAY_EVENT_TYPES.MAKE);
+  });
+});
+
+describe('type badges', () => {
+  it('returns badges in stable display order', () => {
+    const badges = getSortedTypeBadges([
+      PLAY_EVENT_TYPES.ASSIST,
+      PLAY_EVENT_TYPES.THREE_PT,
+      PLAY_EVENT_TYPES.MAKE,
+    ]);
+    expect(badges.map((b) => b.short)).toEqual(['3PT', 'Make', 'Ast']);
   });
 });
 
