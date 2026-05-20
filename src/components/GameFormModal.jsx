@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   STAT_FIELDS,
   gameToFormState,
@@ -6,6 +6,7 @@ import {
   buildGamePayload,
 } from '../utils/gameForm';
 import StatHelp from './StatHelp';
+import PlayByPlayTagBar from './PlayByPlayTagBar';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
@@ -13,6 +14,8 @@ const inputClass =
 export default function GameFormModal({ mode, game, onSave, onClose }) {
   const [form, setForm] = useState(() => gameToFormState(game));
   const [errors, setErrors] = useState({});
+  const [playTime, setPlayTime] = useState('');
+  const playByPlayRef = useRef(null);
 
   const title = mode === 'edit' ? 'Edit Game' : 'Add Game';
 
@@ -143,16 +146,38 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
               Play-by-play
             </label>
-            <p className="text-xs text-gray-400 mb-2">
-              One event per line with timestamp (e.g. 3:50 Make 3 PT). Use: Make/Miss 2 PT or 3 PT, Assist, HQPA,
-              Paint touch, TOV, LB TOV, Def reb, Def, Steal — each maps to a Smart Film Room filter.
-            </p>
+            <div className="flex flex-wrap items-end gap-3 mb-2">
+              <label className="text-xs text-gray-600">
+                <span className="block font-semibold text-gray-500 uppercase mb-1">
+                  Clip time
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="3:50"
+                  value={playTime}
+                  onChange={(e) => setPlayTime(e.target.value)}
+                  className="w-24 text-sm px-3 py-2 border border-gray-300 rounded-md font-mono focus:ring focus:ring-blue-200 focus:outline-none"
+                  aria-label="Timestamp for next play tag"
+                />
+              </label>
+              <p className="text-xs text-gray-400 flex-1 min-w-[200px]">
+                Type minutes:seconds (or 350 for 3:50), then tap a tag below.
+              </p>
+            </div>
+            <PlayByPlayTagBar
+              playByPlayText={form.playByPlayText}
+              timeStr={playTime}
+              onChange={(text) => setField('playByPlayText', text)}
+              textareaRef={playByPlayRef}
+            />
             <textarea
+              ref={playByPlayRef}
               value={form.playByPlayText}
               onChange={(e) => setField('playByPlayText', e.target.value)}
               rows={8}
               className={`${inputClass} font-mono`}
-              placeholder={'0:25 Assist, paint touch\n3:50 Make 2 PT'}
+              placeholder={'0:25 Assist, paint touch\n3:50 Make 3 PT'}
             />
           </div>
         </form>
