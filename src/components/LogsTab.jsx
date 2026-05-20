@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { getYoutubeId, parseTime } from '../utils/youtube';
-import { getGameDateLabel, normalizeGameStats } from '../utils/gameStats';
+import { formatGameTitle, formatGameSubtitle, normalizeGameStats } from '../utils/gameStats';
 import GameFormModal from './GameFormModal';
 
 export default function LogsTab({
@@ -39,8 +39,8 @@ export default function LogsTab({
   };
 
   const handleDelete = (game) => {
-    const label = game.opponent ? `vs ${game.opponent}` : 'this game';
-    if (window.confirm(`Delete ${label}? This cannot be undone.`)) {
+    const label = formatGameTitle(game, player);
+    if (window.confirm(`Delete "${label}"? This cannot be undone.`)) {
       deleteGame(game.id);
     }
   };
@@ -82,20 +82,18 @@ export default function LogsTab({
               Timestamps in play-by-play become clickable links in the Smart Film Room.
             </p>
           </div>
-          {games.map((g, index) => {
+          {games.map((g) => {
             const ytId = getYoutubeId(g.videoUrl);
             const s = normalizeGameStats(g.stats);
-            const dateLabel = getGameDateLabel(g);
             return (
               <div key={g.id} className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-3 mb-4 gap-3">
                   <div>
                     <h3 className="text-xl font-bold text-gray-800">
-                      Game {games.length - index}: vs {g.opponent}
+                      {formatGameTitle(g, player)}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {dateLabel} | Result:{' '}
-                      <span className="font-semibold">{g.result || '—'}</span> | Mins: {s.mins}
+                      {formatGameSubtitle(g, s)}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 no-print">

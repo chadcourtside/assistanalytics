@@ -1,4 +1,4 @@
-import { getGameDateLabel, sortGamesNewestFirst } from './gameStats';
+import { formatGameTitle, formatGameDateDisplay, sortGamesNewestFirst } from './gameStats';
 import {
   sumGameStats,
   seasonAverages,
@@ -83,7 +83,7 @@ export function buildPlayerRosterSummary(player, games, benchmarkSet) {
     averages,
     lastGame,
     lastGameLabel: lastGame
-      ? `vs ${lastGame.opponent}${lastGame.date ? ` · ${getGameDateLabel(lastGame)}` : ''}`
+      ? `${formatGameTitle(lastGame, player)}${formatGameDateDisplay(lastGame) ? ` · ${formatGameDateDisplay(lastGame)}` : ''}`
       : 'No games yet',
     benchmarks,
   };

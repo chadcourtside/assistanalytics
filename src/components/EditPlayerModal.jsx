@@ -8,7 +8,6 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
   const [lastName, setLastName] = useState(player.lastName || '');
   const [jerseyNumber, setJerseyNumber] = useState(player.jerseyNumber || '');
   const [team, setTeam] = useState(player.team || '');
-  const [position, setPosition] = useState(player.position || '');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,12 +16,15 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
       lastName,
       jerseyNumber,
       team,
-      position,
     });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 no-print">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 no-print"
+      onClick={onClose}
+      role="presentation"
+    >
       <div
         className="bg-white rounded-lg shadow-xl w-full max-w-md"
         role="dialog"
@@ -43,53 +45,42 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-3">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-              First name *
-            </label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-              Last name
-            </label>
-            <input
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className={inputClass}
-            />
-          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-                Jersey #
+                First name *
               </label>
               <input
                 type="text"
-                value={jerseyNumber}
-                onChange={(e) => setJerseyNumber(e.target.value)}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
                 className={inputClass}
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-                Position
+                Last name
               </label>
               <input
                 type="text"
-                value={position}
-                onChange={(e) => setPosition(e.target.value)}
-                placeholder="e.g. G"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 className={inputClass}
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+              Jersey #
+            </label>
+            <input
+              type="text"
+              value={jerseyNumber}
+              onChange={(e) => setJerseyNumber(e.target.value)}
+              placeholder="e.g. 12"
+              className={inputClass}
+            />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
@@ -103,7 +94,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
               className={inputClass}
             />
             <p className="text-xs text-gray-400 mt-1">
-              Team name groups players on the Roster tab.
+              Used to group players on the Roster tab. Leave blank if not on a team yet.
             </p>
           </div>
           <div className="flex gap-2 pt-2">

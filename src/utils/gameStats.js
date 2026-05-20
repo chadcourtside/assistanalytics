@@ -29,6 +29,66 @@ export function normalizeGameStats(raw = {}) {
   };
 }
 
+/** Player or game team for matchup titles (game.team overrides player.team). */
+export function getOurTeamLabel(game, player) {
+  const gameTeam = (game?.team || '').trim();
+  const playerTeam = (player?.team || '').trim();
+  if (gameTeam) return gameTeam;
+  if (playerTeam) return playerTeam;
+  return player?.displayName?.trim() || 'Our Team';
+}
+
+/**
+ * Display title for a game card, e.g. "7th Grade Gold vs Coyotes".
+ */
+export function formatGameTitle(game, player) {
+  const ours = getOurTeamLabel(game, player);
+  const opponent = (game?.opponent || '').trim() || 'TBD';
+  return `${ours} vs ${opponent}`;
+}
+
+/** Human-friendly date for subtitles; falls back to competition label. */
+export function formatGameDateDisplay(game) {
+  const date = (game?.date || '').trim();
+  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const parsed = new Date(`${date}T12:00:00`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+  }
+  if (date) return date;
+  const competition = (game?.competition || '').trim();
+  if (competition) return competition;
+  return null;
+}
+
+/**
+ * Secondary line under the game title: date, competition, result, minutes.
+ */
+export function formatGameSubtitle(game, stats) {
+  const parts = [];
+  const dateDisplay = formatGameDateDisplay(game);
+  if (dateDisplay) parts.push(dateDisplay);
+
+  const competition = (game?.competition || '').trim();
+  const hasIsoDate = (game?.date || '').trim() && /^\d{4}-\d{2}-\d{2}$/.test(game.date);
+  if (competition && (!hasIsoDate || competition !== dateDisplay)) {
+    parts.push(competition);
+  }
+
+  if (game?.result?.trim()) {
+    parts.push(`Result: ${game.result.trim()}`);
+  }
+
+  parts.push(`${stats?.mins ?? 0} min`);
+
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
+
 export function getGameDateLabel(game) {
   const parts = [];
   if (game.date) parts.push(game.date);

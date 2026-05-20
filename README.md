@@ -4,7 +4,7 @@ A local-first **multi-player** basketball development app for tracking individua
 
 ## What it does
 
-- **Players** — Add players and switch the active player from the header or **Roster** tab
+- **Players** — Add players, **Edit Player** (name, jersey, team) from the header or Roster, and switch via the dropdown
 - **Roster** — Team-grouped player list with season snapshot, key benchmark status, and quick actions
 - **Dashboard** — Last game snapshot, season trend charts, totals, box score, per-24/32 rates, PDF export
 - **Stat Guide** — In-app glossary (header button) plus hover tooltips on stat labels

@@ -9,12 +9,14 @@ import PlayerSelector from './components/PlayerSelector';
 import AddPlayerForm from './components/AddPlayerForm';
 import StatGlossaryButton from './components/StatGlossaryButton';
 import DataTransferMenu from './components/DataTransferMenu';
+import EditPlayerModal from './components/EditPlayerModal';
 
 const TABS = ['Roster', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Roster');
   const [filmGameId, setFilmGameId] = useState(null);
+  const [editingPlayer, setEditingPlayer] = useState(null);
   const {
     state,
     activePlayer,
@@ -43,6 +45,16 @@ export default function App() {
     if (tab !== 'Smart Film Room') setFilmGameId(null);
   };
 
+  const handleSavePlayer = (updates) => {
+    if (!editingPlayer) return;
+    updatePlayer(editingPlayer.id, updates);
+    setEditingPlayer(null);
+  };
+
+  const openEditPlayer = (player) => {
+    if (player) setEditingPlayer(player);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-slate-900 text-white py-6 px-4 md:px-8 shadow-md no-print">
@@ -60,6 +72,16 @@ export default function App() {
               activePlayerId={state.activePlayerId}
               onSelect={setActivePlayerId}
             />
+            {activePlayer && (
+              <button
+                type="button"
+                onClick={() => openEditPlayer(activePlayer)}
+                className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-2 rounded-md font-semibold whitespace-nowrap"
+                title="Edit name, jersey, and team"
+              >
+                Edit Player
+              </button>
+            )}
             <DataTransferMenu state={state} onImport={importAppState} />
             <StatGlossaryButton />
             <AddPlayerForm onAdd={addPlayer} />
@@ -97,7 +119,7 @@ export default function App() {
                 benchmarkSets={state.benchmarkSets}
                 activePlayerId={state.activePlayerId}
                 onSelectPlayer={setActivePlayerId}
-                onUpdatePlayer={updatePlayer}
+                onEditPlayer={openEditPlayer}
                 onNavigate={navigateToPlayerTab}
               />
             )}
@@ -148,6 +170,15 @@ export default function App() {
           </>
         )}
       </main>
+
+      {editingPlayer && (
+        <EditPlayerModal
+          key={editingPlayer.id}
+          player={editingPlayer}
+          onSave={handleSavePlayer}
+          onClose={() => setEditingPlayer(null)}
+        />
+      )}
     </div>
   );
 }

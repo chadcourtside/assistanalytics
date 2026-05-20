@@ -4,8 +4,6 @@ import {
   buildPlayerRosterSummary,
   getTeamList,
 } from '../utils/roster';
-import EditPlayerModal from './EditPlayerModal';
-
 function BenchmarkPill({ onTrack, total }) {
   if (total === 0) {
     return <span className="text-xs text-gray-400">—</span>;
@@ -98,11 +96,10 @@ export default function RosterTab({
   benchmarkSets,
   activePlayerId,
   onSelectPlayer,
-  onUpdatePlayer,
+  onEditPlayer,
   onNavigate,
 }) {
   const [teamFilter, setTeamFilter] = useState('all');
-  const [editingPlayer, setEditingPlayer] = useState(null);
 
   const teams = useMemo(() => getTeamList(players), [players]);
 
@@ -129,13 +126,6 @@ export default function RosterTab({
     }
     return map;
   }, [players, games, benchmarkByPlayer]);
-
-  const handleSavePlayer = (updates) => {
-    if (editingPlayer) {
-      onUpdatePlayer(editingPlayer.id, updates);
-      setEditingPlayer(null);
-    }
-  };
 
   if (players.length === 0) {
     return (
@@ -206,7 +196,7 @@ export default function RosterTab({
                     summary={summaries.get(player.id)}
                     isActive={player.id === activePlayerId}
                     onSelect={onSelectPlayer}
-                    onEdit={setEditingPlayer}
+                    onEdit={onEditPlayer}
                     onViewDashboard={(id) => onNavigate('Dashboard', id)}
                     onAddGame={(id) => onNavigate('Game Logs', id)}
                   />
@@ -218,16 +208,8 @@ export default function RosterTab({
       ))}
 
       <p className="text-xs text-gray-400">
-        Key goals = key benchmark indicators on track (12-month target). Edit a player to set their team name.
+        Key goals = key benchmark indicators on track (12-month target). Use Edit on a row or Edit Player in the header.
       </p>
-
-      {editingPlayer && (
-        <EditPlayerModal
-          player={editingPlayer}
-          onSave={handleSavePlayer}
-          onClose={() => setEditingPlayer(null)}
-        />
-      )}
     </div>
   );
 }
