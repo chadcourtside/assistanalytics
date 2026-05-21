@@ -1,23 +1,32 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   STAT_FIELDS,
+  QUICK_STAT_FIELDS,
+  QUICK_INCREMENT_STATS,
   gameToFormState,
   validateGameForm,
   buildGamePayload,
+  parseStatValue,
 } from '../utils/gameForm';
+import { GAME_TYPE_OPTIONS } from '../constants/gameTypes';
+import { applyPlayByPlayCountsToStats } from '../utils/playByPlayStats';
 import StatHelp from './StatHelp';
 import PlayByPlayTagBar from './PlayByPlayTagBar';
+import PlayByPlayReconcilePanel from './PlayByPlayReconcilePanel';
 import { insertPlayByPlayLine } from '../utils/playByPlayForm';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
 
-export default function GameFormModal({ mode, game, onSave, onClose }) {
-  const [form, setForm] = useState(() => gameToFormState(game));
+export default function GameFormModal({ mode, game, initialForm, onSave, onClose }) {
+  const [form, setForm] = useState(() => initialForm ?? gameToFormState(game));
   const [errors, setErrors] = useState({});
   const [playTime, setPlayTime] = useState('');
   const [customNote, setCustomNote] = useState('');
+  const [quickLogMode, setQuickLogMode] = useState(false);
   const playByPlayRef = useRef(null);
+
+  const statFields = quickLogMode ? QUICK_STAT_FIELDS : STAT_FIELDS;
 
   const insertCustomNote = () => {
     const text = customNote.trim();
@@ -45,6 +54,23 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
     }));
   };
 
+  const incrementStat = (key) => {
+    setForm((prev) => {
+      const current = parseStatValue(prev.stats?.[key]);
+      return {
+        ...prev,
+        stats: { ...prev.stats, [key]: current + 1 },
+      };
+    });
+  };
+
+  const applyFromPlayByPlay = () => {
+    setForm((prev) => ({
+      ...prev,
+      stats: applyPlayByPlayCountsToStats(prev.stats, prev.playByPlayText),
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const { errors: validationErrors, stats } = validateGameForm(form);
@@ -55,6 +81,27 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
     onSave(buildGamePayload(form, stats));
   };
 
+  const quickIncrements = useMemo(
+    () => (
+      <div className="flex flex-wrap gap-2 mb-3">
+        <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400 w-full">
+          Quick +1 (box score)
+        </span>
+        {QUICK_INCREMENT_STATS.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => incrementStat(key)}
+            className="px-2.5 py-1.5 text-xs font-bold rounded-md border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800"
+          >
+            +1 {label}
+          </button>
+        ))}
+      </div>
+    ),
+    []
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 no-print">
       <div
@@ -63,9 +110,18 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
         aria-labelledby="game-form-title"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 shrink-0">
-          <h2 id="game-form-title" className="text-xl font-bold text-gray-800">
-            {title}
-          </h2>
+          <div>
+            <h2 id="game-form-title" className="text-xl font-bold text-gray-800">
+              {title}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setQuickLogMode((v) => !v)}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 mt-1"
+            >
+              {quickLogMode ? 'Show full box score' : 'Quick log mode (fewer fields)'}
+            </button>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -122,6 +178,37 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
                 className={inputClass}
               />
             </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                Game type
+              </label>
+              <select
+                value={form.gameType}
+                onChange={(e) => setField('gameType', e.target.value)}
+                className={inputClass}
+              >
+                {GAME_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                Season label
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 2025-26 (optional)"
+                value={form.season}
+                onChange={(e) => setField('season', e.target.value)}
+                className={inputClass}
+              />
+              <p className="text-[11px] text-gray-400 mt-1">
+                Leave blank to use the player&apos;s current season for filters.
+              </p>
+            </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
                 YouTube URL
@@ -139,8 +226,9 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
           <div>
             <h3 className="text-sm font-bold text-gray-800 mb-2">Box Score</h3>
             {errors.stats && <p className="text-red-600 text-xs mb-2">{errors.stats}</p>}
+            {quickIncrements}
             <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
-              {STAT_FIELDS.map(({ key, label }) => (
+              {statFields.map(({ key, label }) => (
                 <div key={key}>
                   <label className="block text-xs text-gray-500 text-center mb-1">
                     <StatHelp statId={key}>{label}</StatHelp>
@@ -161,6 +249,11 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
               Play-by-play
             </label>
+            <PlayByPlayReconcilePanel
+              stats={form.stats}
+              playByPlayText={form.playByPlayText}
+              onApplyCounts={applyFromPlayByPlay}
+            />
             <div className="flex flex-wrap items-end gap-3 mb-2">
               <label className="text-xs text-gray-600">
                 <span className="block font-semibold text-gray-500 uppercase mb-1">
@@ -208,10 +301,6 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
               >
                 Add note
               </button>
-              <p className="w-full text-[11px] text-gray-400">
-                Inserts a line like <span className="font-mono">3:50 Note: your text</span>. Shows in
-                Film Room under Notes — does not affect box score totals.
-              </p>
             </div>
             <textarea
               ref={playByPlayRef}
@@ -219,7 +308,7 @@ export default function GameFormModal({ mode, game, onSave, onClose }) {
               onChange={(e) => setField('playByPlayText', e.target.value)}
               rows={8}
               className={`${inputClass} font-mono`}
-              placeholder={'0:25 Assist, paint touch\n3:50 Make 3 PT\n4:10 Note: Switched onto #12 after hedge'}
+              placeholder={'0:25 Assist, paint touch\n3:50 Make 3 PT\n4:10 Make FT\n4:10 Note: Switched onto #12 after hedge'}
             />
           </div>
         </form>

@@ -19,6 +19,12 @@ describe('normalizeGameStats', () => {
     expect(s.blk).toBe(1);
     expect(s.foulsDrawn).toBe(2);
   });
+
+  it('includes free throws', () => {
+    const s = normalizeGameStats({ ftm: 3, fta: 4 });
+    expect(s.ftm).toBe(3);
+    expect(s.fta).toBe(4);
+  });
 });
 
 describe('game display labels', () => {

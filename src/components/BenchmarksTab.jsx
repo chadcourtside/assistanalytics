@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { sumGameStats, seasonAverages, getBenchmarkStatusColor, getBenchmarkMetricValue } from '../utils/stats';
 import StatHelp from './StatHelp';
+import GameScopeFilter from './GameScopeFilter';
 
 function BenchmarkRowView({ metricKey, label, currentVal, target4, target12, isKey, isLowerBetter, format }) {
   const v = parseFloat(currentVal);
@@ -52,7 +53,15 @@ function BenchmarkRowEdit({ target, onChange }) {
   );
 }
 
-export default function BenchmarksTab({ player, games, benchmarkSet, onSaveTargets }) {
+export default function BenchmarksTab({
+  player,
+  games,
+  totalGameCount,
+  gameScope,
+  onGameScopeChange,
+  benchmarkSet,
+  onSaveTargets,
+}) {
   const [editing, setEditing] = useState(false);
   const [draftTargets, setDraftTargets] = useState([]);
 
@@ -93,8 +102,10 @@ export default function BenchmarksTab({ player, games, benchmarkSet, onSaveTarge
           </h2>
           <p className="text-gray-500 text-sm">
             {games.length === 0
-              ? 'No games yet — targets shown for when games are logged.'
-              : 'Tracking current season averages vs 4-month and 12-month goals.'}{' '}
+              ? totalGameCount > 0
+                ? 'No games match the current filter — adjust season or type above.'
+                : 'No games yet — targets shown for when games are logged.'
+              : `Comparing ${games.length} of ${totalGameCount ?? games.length} games vs 4-month and 12-month goals.`}{' '}
             <span className="text-gray-400">Hover dotted metric names for definitions.</span>
           </p>
           <div className="mt-4 flex gap-4 text-xs">
@@ -120,6 +131,14 @@ export default function BenchmarksTab({ player, games, benchmarkSet, onSaveTarge
           )}
         </div>
       </div>
+      {gameScope && onGameScopeChange && (
+        <GameScopeFilter
+          player={player}
+          scope={gameScope}
+          onChange={onGameScopeChange}
+          className="no-print"
+        />
+      )}
       <table className="w-full text-sm text-left">
         <thead className="bg-gray-800 text-white">
           <tr>

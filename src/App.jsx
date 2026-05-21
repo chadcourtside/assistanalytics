@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppState } from './hooks/useAppState';
+import { filterGamesByScope } from './utils/gameFilters';
 import RosterTab from './components/RosterTab';
 import DashboardTab from './components/DashboardTab';
 import LogsTab from './components/LogsTab';
@@ -9,6 +10,7 @@ import PlayerSelector from './components/PlayerSelector';
 import AddPlayerForm from './components/AddPlayerForm';
 import StatGlossaryButton from './components/StatGlossaryButton';
 import DataTransferMenu from './components/DataTransferMenu';
+import BackupReminderBanner from './components/BackupReminderBanner';
 import EditPlayerModal from './components/EditPlayerModal';
 
 const TABS = ['Roster', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
@@ -17,6 +19,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Roster');
   const [filmGameId, setFilmGameId] = useState(null);
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [gameScope, setGameScope] = useState({ seasonFilter: 'all', gameTypeFilter: 'all' });
   const {
     state,
     activePlayer,
@@ -31,7 +34,22 @@ export default function App() {
     updateBenchmarkTargets,
     updatePlayer,
     importAppState,
+    recordExport,
+    updateMeta,
+    snoozeBackupReminder,
   } = useAppState();
+
+  useEffect(() => {
+    setGameScope((prev) => ({
+      ...prev,
+      seasonFilter: activePlayer?.season ? 'player' : 'all',
+    }));
+  }, [activePlayer?.id, activePlayer?.season]);
+
+  const scopedPlayerGames = useMemo(() => {
+    if (!activePlayer) return [];
+    return filterGamesByScope(activePlayerGames, activePlayer, gameScope);
+  }, [activePlayerGames, activePlayer, gameScope]);
 
   const openFilmForGame = (game) => {
     if (!game) return;
@@ -82,12 +100,23 @@ export default function App() {
                 Edit Player
               </button>
             )}
-            <DataTransferMenu state={state} onImport={importAppState} />
+            <DataTransferMenu
+              meta={state.meta}
+              onExport={recordExport}
+              onImport={importAppState}
+              onUpdateMeta={updateMeta}
+            />
             <StatGlossaryButton />
             <AddPlayerForm onAdd={addPlayer} />
           </div>
         </div>
       </header>
+
+      <BackupReminderBanner
+        meta={state.meta}
+        onExport={recordExport}
+        onDismiss={snoozeBackupReminder}
+      />
 
       <nav className="bg-white border-b border-gray-200 px-4 md:px-8 no-print sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto flex overflow-x-auto hide-scrollbar">
@@ -126,7 +155,10 @@ export default function App() {
             {activeTab === 'Dashboard' && activePlayer && (
               <DashboardTab
                 player={activePlayer}
-                games={activePlayerGames}
+                games={scopedPlayerGames}
+                totalGameCount={activePlayerGames.length}
+                gameScope={gameScope}
+                onGameScopeChange={setGameScope}
                 onOpenFilm={openFilmForGame}
               />
             )}
@@ -149,7 +181,10 @@ export default function App() {
             {activeTab === 'Benchmarks' && activePlayer && (
               <BenchmarksTab
                 player={activePlayer}
-                games={activePlayerGames}
+                games={scopedPlayerGames}
+                totalGameCount={activePlayerGames.length}
+                gameScope={gameScope}
+                onGameScopeChange={setGameScope}
                 benchmarkSet={activeBenchmarkSet}
                 onSaveTargets={updateBenchmarkTargets}
               />
@@ -160,7 +195,9 @@ export default function App() {
             {activeTab === 'Smart Film Room' && activePlayer && (
               <FilmRoomTab
                 player={activePlayer}
-                games={activePlayerGames}
+                games={scopedPlayerGames}
+                gameScope={gameScope}
+                onGameScopeChange={setGameScope}
                 initialGameId={filmGameId}
               />
             )}

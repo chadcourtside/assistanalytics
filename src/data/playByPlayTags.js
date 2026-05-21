@@ -8,6 +8,8 @@ export const PLAY_BY_PLAY_TAG_GROUPS = [
       { label: 'Make 2 PT', line: 'Make 2 PT' },
       { label: 'Miss 3 PT', line: 'Miss 3 PT' },
       { label: 'Miss 2 PT', line: 'Miss 2 PT' },
+      { label: 'Make FT', line: 'Make FT' },
+      { label: 'Miss FT', line: 'Miss FT' },
     ],
   },
   {

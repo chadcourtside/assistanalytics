@@ -11,6 +11,8 @@ export function normalizeGameStats(raw = {}) {
     (oreb > 0 || dreb > 0 ? oreb + dreb : 0);
   const liveBallTov = raw.liveBallTov ?? raw.lbTov ?? 0;
   const foulsDrawn = raw.foulsDrawn ?? raw.fd ?? 0;
+  const ftm = raw.ftm ?? 0;
+  const fta = raw.fta ?? 0;
 
   return {
     mins: raw.mins ?? 0,
@@ -19,6 +21,8 @@ export function normalizeGameStats(raw = {}) {
     fga: raw.fga ?? 0,
     threePm,
     threePa,
+    ftm,
+    fta,
     oreb,
     dreb,
     reb,

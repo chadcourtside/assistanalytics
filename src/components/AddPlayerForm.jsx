@@ -6,6 +6,7 @@ export default function AddPlayerForm({ onAdd }) {
   const [lastName, setLastName] = useState('');
   const [jerseyNumber, setJerseyNumber] = useState('');
   const [team, setTeam] = useState('');
+  const [season, setSeason] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -14,12 +15,14 @@ export default function AddPlayerForm({ onAdd }) {
       lastName,
       jerseyNumber,
       team,
+      season,
     });
     if (player) {
       setFirstName('');
       setLastName('');
       setJerseyNumber('');
       setTeam('');
+      setSeason('');
       setOpen(false);
     }
   };
@@ -70,6 +73,13 @@ export default function AddPlayerForm({ onAdd }) {
           placeholder="Team"
           value={team}
           onChange={(e) => setTeam(e.target.value)}
+          className="w-full text-sm px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none"
+        />
+        <input
+          type="text"
+          placeholder="Season (e.g. 2025-26)"
+          value={season}
+          onChange={(e) => setSeason(e.target.value)}
           className="w-full text-sm px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none"
         />
       </div>

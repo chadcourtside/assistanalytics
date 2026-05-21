@@ -70,6 +70,12 @@ describe('inferPlayEventTypes', () => {
     expect(isUnclassifiedClip({ types })).toBe(false);
   });
 
+  it('tags Make FT without field goal makes', () => {
+    const types = inferPlayEventTypes('Make FT');
+    expect(types).toEqual([PLAY_EVENT_TYPES.MAKE_FT]);
+    expect(types).not.toContain(PLAY_EVENT_TYPES.MAKE);
+  });
+
   it('tags standalone Def as deflection', () => {
     const types = inferPlayEventTypes('9:50 Def');
     expect(types).toContain(PLAY_EVENT_TYPES.DEFLECTION);

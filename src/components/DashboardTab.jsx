@@ -3,11 +3,19 @@ import TableStatHeader from './TableStatHeader';
 import StatHelp from './StatHelp';
 import LastGamePanel from './LastGamePanel';
 import TrendCharts from './TrendCharts';
+import GameScopeFilter from './GameScopeFilter';
 import { exportPDF } from '../utils/exportPdf';
 import { sumGameStats, calcEFG, calcAstTo, calcPer } from '../utils/stats';
 import { normalizeGameStats } from '../utils/gameStats';
 
-export default function DashboardTab({ player, games, onOpenFilm }) {
+export default function DashboardTab({
+  player,
+  games,
+  totalGameCount,
+  gameScope,
+  onGameScopeChange,
+  onOpenFilm,
+}) {
   const totals = sumGameStats(games);
   const gms = games.length || 1;
   const eFgTotal = calcEFG(totals.fgm, totals.threePm, totals.fga) ?? 0;
@@ -16,30 +24,46 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
 
   if (games.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg font-medium">No games logged for {player?.displayName} yet.</p>
-        <p className="text-sm mt-2">Open Game Logs to add the first game.</p>
+      <div className="text-center py-12 text-gray-500 space-y-4">
+        <p className="text-lg font-medium">
+          {totalGameCount > 0
+            ? 'No games match the current season/type filter.'
+            : `No games logged for ${player?.displayName} yet.`}
+        </p>
+        {totalGameCount > 0 && gameScope && onGameScopeChange && (
+          <div className="flex justify-center">
+            <GameScopeFilter player={player} scope={gameScope} onChange={onGameScopeChange} />
+          </div>
+        )}
+        {totalGameCount === 0 && (
+          <p className="text-sm">Open Game Logs to add the first game.</p>
+        )}
       </div>
     );
   }
 
   return (
     <div id="pdf-dashboard" className="print-friendly space-y-6">
-      <div className="flex justify-between items-end no-print">
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 no-print">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Season Averages &amp; Totals</h2>
           <p className="text-sm text-gray-500">
-            {player.displayName} — {games.length} Games Logged ·{' '}
+            {player.displayName} — {games.length} of {totalGameCount ?? games.length} games in view ·{' '}
             <span className="text-gray-400">Hover dotted stat labels for definitions</span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => exportPDF('pdf-dashboard', `${pdfPrefix}_Dashboard.pdf`)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold"
-        >
-          Print Dashboard
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+          {gameScope && onGameScopeChange && (
+            <GameScopeFilter player={player} scope={gameScope} onChange={onGameScopeChange} />
+          )}
+          <button
+            type="button"
+            onClick={() => exportPDF('pdf-dashboard', `${pdfPrefix}_Dashboard.pdf`)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold shrink-0"
+          >
+            Print Dashboard
+          </button>
+        </div>
       </div>
       <LastGamePanel game={games[0]} onOpenFilm={onOpenFilm} />
       <TrendCharts games={games} />
@@ -83,6 +107,7 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                 <TableStatHeader statId="pts">PTS</TableStatHeader>
                 <TableStatHeader statId="fgm">FGM/A</TableStatHeader>
                 <TableStatHeader statId="threePm">3PM/A</TableStatHeader>
+                <TableStatHeader statId="ftm">FTM/A</TableStatHeader>
                 <TableStatHeader statId="efg" className="px-3 py-2 text-blue-600">eFG%</TableStatHeader>
                 <TableStatHeader statId="reb">REB</TableStatHeader>
                 <TableStatHeader statId="oreb">OREB</TableStatHeader>
@@ -110,6 +135,7 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                     <td className="px-3 py-2 font-bold">{s.pts}</td>
                     <td className="px-3 py-2">{s.fgm}/{s.fga}</td>
                     <td className="px-3 py-2">{s.threePm}/{s.threePa}</td>
+                    <td className="px-3 py-2">{s.ftm}/{s.fta}</td>
                     <td className="px-3 py-2 text-blue-700 font-medium">{efg === null ? '-' : `${efg}%`}</td>
                     <td className="px-3 py-2">{s.reb}</td>
                     <td className="px-3 py-2">{s.oreb}</td>
@@ -136,6 +162,7 @@ export default function DashboardTab({ player, games, onOpenFilm }) {
                 <td className="px-3 py-3 text-blue-700">{totals.pts}</td>
                 <td className="px-3 py-3">{totals.fgm}/{totals.fga}</td>
                 <td className="px-3 py-3">{totals.threePm}/{totals.threePa}</td>
+                <td className="px-3 py-3">{totals.ftm}/{totals.fta}</td>
                 <td className="px-3 py-3 text-blue-700">{eFgTotal}%</td>
                 <td className="px-3 py-3">{totals.reb}</td>
                 <td className="px-3 py-3">{totals.oreb}</td>

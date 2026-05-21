@@ -1,5 +1,6 @@
 import { SCHEMA_VERSION } from '../models/appState';
 import { migrateState } from '../storage/migrateState';
+import { DEFAULT_APP_META } from '../constants/gameTypes';
 
 export const EXPORT_FORMAT_VERSION = 1;
 
@@ -9,6 +10,7 @@ export function serializeAppState(state) {
     exportVersion: EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
     schemaVersion: state.schemaVersion ?? SCHEMA_VERSION,
+    meta: state.meta ?? DEFAULT_APP_META,
     activePlayerId: state.activePlayerId,
     players: state.players ?? [],
     games: state.games ?? [],
@@ -31,6 +33,19 @@ export function buildExportFilename(state) {
   const date = new Date().toISOString().slice(0, 10);
   const count = state.players?.length ?? 0;
   return `assistanalytics-backup-${date}-${count}players.json`;
+}
+
+export function exportAppStateToFile(state) {
+  const json = serializeAppState(state);
+  downloadJson(buildExportFilename(state), json);
+  return json;
+}
+
+export function daysSinceIso(isoDate) {
+  if (!isoDate) return null;
+  const then = new Date(isoDate).getTime();
+  if (Number.isNaN(then)) return null;
+  return Math.floor((Date.now() - then) / (1000 * 60 * 60 * 24));
 }
 
 export function validateImportData(raw) {
@@ -58,6 +73,7 @@ export function validateImportData(raw) {
 export function normalizeImportedState(data) {
   return migrateState({
     schemaVersion: data.schemaVersion ?? 1,
+    meta: data.meta ?? DEFAULT_APP_META,
     activePlayerId: data.activePlayerId ?? data.players[0]?.id ?? null,
     players: data.players,
     games: data.games,
@@ -80,6 +96,7 @@ export function mergeAppStates(local, importedRaw) {
 
   return migrateState({
     ...local,
+    meta: { ...local.meta, ...imported.meta },
     players: [...local.players, ...newPlayers],
     games: [...local.games, ...newGames],
     benchmarkSets: [...local.benchmarkSets, ...newBenchmarks],

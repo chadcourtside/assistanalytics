@@ -1,6 +1,8 @@
 import { normalizeGameStats } from './gameStats';
 import { playEventsFromPlayByPlay } from './playEvents';
 
+import { normalizeGameType, GAME_TYPES } from '../constants/gameTypes';
+
 export const STAT_FIELDS = [
   { key: 'mins', label: 'MIN' },
   { key: 'pts', label: 'PTS' },
@@ -8,6 +10,8 @@ export const STAT_FIELDS = [
   { key: 'fga', label: 'FGA' },
   { key: 'threePm', label: '3PM' },
   { key: 'threePa', label: '3PA' },
+  { key: 'ftm', label: 'FTM' },
+  { key: 'fta', label: 'FTA' },
   { key: 'oreb', label: 'OREB' },
   { key: 'dreb', label: 'DREB' },
   { key: 'reb', label: 'REB' },
@@ -22,6 +26,31 @@ export const STAT_FIELDS = [
   { key: 'foulsDrawn', label: 'FD' },
   { key: 'ptch', label: 'PTCH' },
   { key: 'plusMinus', label: '+/-' },
+];
+
+/** Subset shown in quick-log mode (sideline / post-game speed entry). */
+export const QUICK_STAT_FIELDS = [
+  { key: 'mins', label: 'MIN' },
+  { key: 'pts', label: 'PTS' },
+  { key: 'fgm', label: 'FGM' },
+  { key: 'fga', label: 'FGA' },
+  { key: 'threePm', label: '3PM' },
+  { key: 'threePa', label: '3PA' },
+  { key: 'ftm', label: 'FTM' },
+  { key: 'fta', label: 'FTA' },
+  { key: 'reb', label: 'REB' },
+  { key: 'ast', label: 'AST' },
+  { key: 'ptch', label: 'PTCH' },
+  { key: 'tov', label: 'TOV' },
+  { key: 'liveBallTov', label: 'LB TOV' },
+  { key: 'plusMinus', label: '+/-' },
+];
+
+/** One-tap counters during live tagging. */
+export const QUICK_INCREMENT_STATS = [
+  { key: 'ptch', label: 'PTCH' },
+  { key: 'defl', label: 'DEFL' },
+  { key: 'hqpa', label: 'HQPA' },
 ];
 
 export function createEmptyStats() {
@@ -49,6 +78,8 @@ export function gameToFormState(game) {
       result: '',
       competition: '',
       videoUrl: '',
+      gameType: GAME_TYPES.GAME,
+      season: '',
       stats: createEmptyStats(),
       playByPlayText: '',
     };
@@ -60,8 +91,26 @@ export function gameToFormState(game) {
     result: game.result || '',
     competition: game.competition || '',
     videoUrl: game.videoUrl || '',
+    gameType: normalizeGameType(game.gameType),
+    season: game.season || '',
     stats,
     playByPlayText: playByPlayToText(game.playByPlay),
+  };
+}
+
+export function duplicateGameFormState(sourceGame) {
+  if (!sourceGame) return gameToFormState(null);
+  const base = gameToFormState(null);
+  return {
+    ...base,
+    opponent: sourceGame.opponent || '',
+    competition: sourceGame.competition || '',
+    gameType: normalizeGameType(sourceGame.gameType),
+    season: sourceGame.season || '',
+    videoUrl: '',
+    result: '',
+    stats: createEmptyStats(),
+    playByPlayText: '',
   };
 }
 
@@ -89,6 +138,9 @@ export function validateGameForm(form) {
   if (stats.threePm > stats.fgm) {
     errors.stats = '3PM cannot exceed FGM';
   }
+  if (stats.ftm > stats.fta) {
+    errors.stats = 'FTM cannot exceed FTA';
+  }
   return { errors, stats };
 }
 
@@ -100,6 +152,8 @@ export function buildGamePayload(form, stats) {
     result: form.result?.trim() || undefined,
     competition: form.competition?.trim() || undefined,
     videoUrl: form.videoUrl?.trim() || '',
+    gameType: normalizeGameType(form.gameType),
+    season: form.season?.trim() || undefined,
     stats,
     playByPlay,
     playEvents: playEventsFromPlayByPlay(playByPlay),

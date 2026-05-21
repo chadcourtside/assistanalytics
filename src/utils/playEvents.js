@@ -6,6 +6,8 @@ export const PLAY_EVENT_TYPES = {
   MISS: 'miss',
   TWO_PT: 'twoPt',
   THREE_PT: 'threePt',
+  MAKE_FT: 'makeFt',
+  MISS_FT: 'missFt',
   ASSIST: 'assist',
   HQPA: 'hqpa',
   PAINT_TOUCH: 'paintTouch',
@@ -44,6 +46,16 @@ export const PLAY_EVENT_BADGE_META = {
     short: '3PT',
     className: 'bg-indigo-100 text-indigo-800 border-indigo-200',
     darkClassName: 'bg-indigo-900/60 text-indigo-200 border-indigo-800',
+  },
+  [PLAY_EVENT_TYPES.MAKE_FT]: {
+    short: 'FTM',
+    className: 'bg-green-100 text-green-800 border-green-200',
+    darkClassName: 'bg-green-900/60 text-green-200 border-green-800',
+  },
+  [PLAY_EVENT_TYPES.MISS_FT]: {
+    short: 'Miss FT',
+    className: 'bg-red-100 text-red-800 border-red-200',
+    darkClassName: 'bg-red-900/60 text-red-200 border-red-800',
   },
   [PLAY_EVENT_TYPES.ASSIST]: {
     short: 'Ast',
@@ -126,6 +138,8 @@ export const PLAY_EVENT_BADGE_META = {
 const BADGE_DISPLAY_ORDER = [
   PLAY_EVENT_TYPES.THREE_PT,
   PLAY_EVENT_TYPES.TWO_PT,
+  PLAY_EVENT_TYPES.MAKE_FT,
+  PLAY_EVENT_TYPES.MISS_FT,
   PLAY_EVENT_TYPES.MAKE,
   PLAY_EVENT_TYPES.MISS,
   PLAY_EVENT_TYPES.ASSIST,
@@ -159,6 +173,8 @@ export const FILM_FILTERS = [
   { id: 'miss', label: 'Miss', types: [PLAY_EVENT_TYPES.MISS] },
   { id: 'twoPt', label: '2PT', types: [PLAY_EVENT_TYPES.TWO_PT] },
   { id: 'threePt', label: '3PT', types: [PLAY_EVENT_TYPES.THREE_PT] },
+  { id: 'makeFt', label: 'Make FT', types: [PLAY_EVENT_TYPES.MAKE_FT] },
+  { id: 'missFt', label: 'Miss FT', types: [PLAY_EVENT_TYPES.MISS_FT] },
   { id: 'assist', label: 'Assist', types: [PLAY_EVENT_TYPES.ASSIST] },
   { id: 'hqpa', label: 'HQPA', types: [PLAY_EVENT_TYPES.HQPA] },
   { id: 'paintTouch', label: 'Paint Touch', types: [PLAY_EVENT_TYPES.PAINT_TOUCH] },
@@ -191,6 +207,9 @@ export function isCustomNoteDescription(description) {
   return /^note:\s*/i.test(description.trim());
 }
 
+const FT_MAKE_RE = /\bmake\s*ft\b|\bmade\s*ft\b|\bft\s*make\b|make\s*free\s*throw|\bftm\b/i;
+const FT_MISS_RE = /\bmiss\s*ft\b|\bmissed\s*ft\b|\bft\s*miss\b|miss\s*free\s*throw/i;
+
 export function inferPlayEventTypes(description) {
   if (!description || typeof description !== 'string') return [PLAY_EVENT_TYPES.OTHER];
 
@@ -200,6 +219,13 @@ export function inferPlayEventTypes(description) {
 
   const lower = description.toLowerCase();
   const types = [];
+
+  if (FT_MAKE_RE.test(lower)) {
+    return [PLAY_EVENT_TYPES.MAKE_FT];
+  }
+  if (FT_MISS_RE.test(lower)) {
+    return [PLAY_EVENT_TYPES.MISS_FT];
+  }
 
   if (/\bmake\b|\bmade\b/.test(lower)) types.push(PLAY_EVENT_TYPES.MAKE);
   if (/\bmiss\b|\bmissed\b/.test(lower)) types.push(PLAY_EVENT_TYPES.MISS);

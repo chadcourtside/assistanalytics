@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { loadState } from '../storage/loadState';
 import { saveState } from '../storage/saveState';
 import { createBenchmarkSet } from '../data/defaultBenchmarkTargets';
@@ -8,8 +8,10 @@ import {
   mergeAppStates,
   replaceAppState,
   validateImportData,
+  exportAppStateToFile,
 } from '../utils/importExport';
 import { createPlayerId, createBenchmarkId, createGameId, nowIso } from '../models/appState';
+import { normalizeGameType, DEFAULT_APP_META } from '../constants/gameTypes';
 
 function enrichGamePayload(payload) {
   const playByPlay = payload.playByPlay ?? [];
@@ -17,14 +19,25 @@ function enrichGamePayload(payload) {
     ...payload,
     playByPlay,
     playEvents: payload.playEvents ?? playEventsFromPlayByPlay(playByPlay),
+    gameType: normalizeGameType(payload.gameType),
   };
+}
+
+function maybeAutoBackup(state) {
+  if (!state.meta?.autoBackupOnSave) return;
+  exportAppStateToFile(state);
 }
 
 export function useAppState() {
   const [state, setState] = useState(loadState);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
     saveState(state);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
   }, [state]);
 
   const activePlayer = useMemo(
@@ -48,6 +61,34 @@ export function useAppState() {
   const setActivePlayerId = useCallback((playerId) => {
     setState((prev) => ({ ...prev, activePlayerId: playerId }));
   }, []);
+
+  const updateMeta = useCallback((patch) => {
+    setState((prev) => ({
+      ...prev,
+      meta: { ...DEFAULT_APP_META, ...prev.meta, ...patch },
+    }));
+  }, []);
+
+  const recordExport = useCallback(() => {
+    setState((prev) => {
+      const next = {
+        ...prev,
+        meta: {
+          ...DEFAULT_APP_META,
+          ...prev.meta,
+          lastExportAt: nowIso(),
+          backupSnoozedUntil: null,
+        },
+      };
+      exportAppStateToFile(next);
+      return next;
+    });
+  }, []);
+
+  const snoozeBackupReminder = useCallback(() => {
+    const snoozeUntil = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    updateMeta({ backupSnoozedUntil: snoozeUntil });
+  }, [updateMeta]);
 
   const addPlayer = useCallback(({ firstName, lastName, jerseyNumber, team, position, season }) => {
     const ts = nowIso();
@@ -96,7 +137,9 @@ export function useAppState() {
         createdAt: ts,
         updatedAt: ts,
       };
-      return { ...prev, games: [...prev.games, game] };
+      const next = { ...prev, games: [...prev.games, game] };
+      maybeAutoBackup(next);
+      return next;
     });
   }, []);
 
@@ -104,7 +147,7 @@ export function useAppState() {
     setState((prev) => {
       if (!prev.activePlayerId) return prev;
       const ts = nowIso();
-      return {
+      const next = {
         ...prev,
         games: prev.games.map((g) =>
           g.id === gameId && g.playerId === prev.activePlayerId
@@ -112,16 +155,22 @@ export function useAppState() {
             : g
         ),
       };
+      maybeAutoBackup(next);
+      return next;
     });
   }, []);
 
   const deleteGame = useCallback((gameId) => {
-    setState((prev) => ({
-      ...prev,
-      games: prev.games.filter(
-        (g) => !(g.id === gameId && g.playerId === prev.activePlayerId)
-      ),
-    }));
+    setState((prev) => {
+      const next = {
+        ...prev,
+        games: prev.games.filter(
+          (g) => !(g.id === gameId && g.playerId === prev.activePlayerId)
+        ),
+      };
+      maybeAutoBackup(next);
+      return next;
+    });
   }, []);
 
   const updateGameUrl = useCallback((gameId, url) => {
@@ -177,7 +226,14 @@ export function useAppState() {
     setState((prev) => {
       const next =
         mode === 'merge' ? mergeAppStates(prev, data) : replaceAppState(data);
-      return next;
+      return {
+        ...next,
+        meta: {
+          ...DEFAULT_APP_META,
+          ...next.meta,
+          lastExportAt: nowIso(),
+        },
+      };
     });
 
     return { success: true, errors: [] };
@@ -197,5 +253,8 @@ export function useAppState() {
     updateBenchmarkTargets,
     updatePlayer,
     importAppState,
+    recordExport,
+    updateMeta,
+    snoozeBackupReminder,
   };
 }

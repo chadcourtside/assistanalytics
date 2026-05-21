@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { getYoutubeId, parseTime } from '../utils/youtube';
 import { formatGameTitle, formatGameSubtitle, normalizeGameStats } from '../utils/gameStats';
+import { duplicateGameFormState } from '../utils/gameForm';
+import { GAME_TYPE_LABELS } from '../constants/gameTypes';
 import GameFormModal from './GameFormModal';
 
 export default function LogsTab({
@@ -13,20 +15,30 @@ export default function LogsTab({
 }) {
   const [modalMode, setModalMode] = useState(null);
   const [editingGame, setEditingGame] = useState(null);
+  const [formSeed, setFormSeed] = useState(null);
 
   const openAdd = () => {
     setEditingGame(null);
+    setFormSeed(null);
+    setModalMode('add');
+  };
+
+  const openDuplicate = (game) => {
+    setEditingGame(null);
+    setFormSeed(duplicateGameFormState(game));
     setModalMode('add');
   };
 
   const openEdit = (game) => {
     setEditingGame(game);
+    setFormSeed(null);
     setModalMode('edit');
   };
 
   const closeModal = () => {
     setModalMode(null);
     setEditingGame(null);
+    setFormSeed(null);
   };
 
   const handleSave = (payload) => {
@@ -52,13 +64,25 @@ export default function LogsTab({
           <h2 className="text-2xl font-bold text-gray-800">Game Logs</h2>
           <p className="text-sm text-gray-500">{player.displayName}</p>
         </div>
-        <button
-          type="button"
-          onClick={openAdd}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold shrink-0"
-        >
-          + Add Game
-        </button>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {games.length > 0 && (
+            <button
+              type="button"
+              onClick={() => openDuplicate(games[0])}
+              className="bg-slate-100 hover:bg-slate-200 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold"
+              title="New game with same opponent and settings"
+            >
+              Duplicate last
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={openAdd}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold shrink-0"
+          >
+            + Add Game
+          </button>
+        </div>
       </div>
 
       {games.length === 0 ? (
@@ -91,12 +115,24 @@ export default function LogsTab({
                   <div>
                     <h3 className="text-xl font-bold text-gray-800">
                       {formatGameTitle(g, player)}
+                      {g.gameType && g.gameType !== 'game' && (
+                        <span className="ml-2 text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 align-middle">
+                          {GAME_TYPE_LABELS[g.gameType] || g.gameType}
+                        </span>
+                      )}
                     </h3>
                     <p className="text-sm text-gray-500">
                       {formatGameSubtitle(g, s)}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 no-print">
+                    <button
+                      type="button"
+                      onClick={() => openDuplicate(g)}
+                      className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 font-medium text-gray-700"
+                    >
+                      Duplicate
+                    </button>
                     <button
                       type="button"
                       onClick={() => openEdit(g)}
@@ -166,8 +202,10 @@ export default function LogsTab({
 
       {modalMode && (
         <GameFormModal
+          key={formSeed ? 'duplicate' : editingGame?.id ?? 'new'}
           mode={modalMode}
           game={editingGame}
+          initialForm={formSeed}
           onSave={handleSave}
           onClose={closeModal}
         />

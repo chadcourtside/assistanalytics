@@ -1,21 +1,19 @@
 import { useRef, useState } from 'react';
 import {
   buildExportFilename,
-  downloadJson,
   readJsonFile,
-  serializeAppState,
   validateImportData,
 } from '../utils/importExport';
 
-export default function DataTransferMenu({ state, onImport }) {
+export default function DataTransferMenu({ meta, onExport, onImport, onUpdateMeta }) {
   const fileRef = useRef(null);
   const [pendingImport, setPendingImport] = useState(null);
   const [importError, setImportError] = useState(null);
   const [importSuccess, setImportSuccess] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleExport = () => {
-    const json = serializeAppState(state);
-    downloadJson(buildExportFilename(state), json);
+    onExport?.();
   };
 
   const handleFileSelect = async (e) => {
@@ -56,7 +54,7 @@ export default function DataTransferMenu({ state, onImport }) {
 
   return (
     <>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 relative">
         <button
           type="button"
           onClick={handleExport}
@@ -73,6 +71,15 @@ export default function DataTransferMenu({ state, onImport }) {
         >
           Import
         </button>
+        <button
+          type="button"
+          onClick={() => setShowSettings((v) => !v)}
+          className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-2 py-2 rounded-md font-semibold"
+          title="Backup settings"
+          aria-label="Backup settings"
+        >
+          ⚙
+        </button>
         <input
           ref={fileRef}
           type="file"
@@ -80,6 +87,41 @@ export default function DataTransferMenu({ state, onImport }) {
           className="hidden"
           onChange={handleFileSelect}
         />
+
+        {showSettings && (
+          <div className="absolute top-full right-0 mt-2 z-50 w-72 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-200 p-4">
+            <h3 className="font-bold text-sm mb-3 text-gray-900">Backup settings</h3>
+            <label className="flex items-start gap-2 text-sm mb-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={Boolean(meta?.autoBackupOnSave)}
+                onChange={(e) => onUpdateMeta?.({ autoBackupOnSave: e.target.checked })}
+                className="mt-0.5"
+              />
+              <span>
+                Auto-download backup when games are saved
+                <span className="block text-xs text-gray-500 mt-0.5">
+                  Downloads a JSON file after each add/edit/delete.
+                </span>
+              </span>
+            </label>
+            <label className="block text-xs text-gray-600">
+              <span className="font-semibold uppercase text-gray-500">Remind me to export after</span>
+              <select
+                value={meta?.exportReminderDays ?? 7}
+                onChange={(e) =>
+                  onUpdateMeta?.({ exportReminderDays: parseInt(e.target.value, 10) })
+                }
+                className="mt-1 w-full text-sm px-2 py-1.5 border border-gray-300 rounded-md"
+              >
+                <option value={3}>3 days</option>
+                <option value={7}>7 days</option>
+                <option value={14}>14 days</option>
+                <option value={30}>30 days</option>
+              </select>
+            </label>
+          </div>
+        )}
       </div>
 
       {(importError || importSuccess) && (

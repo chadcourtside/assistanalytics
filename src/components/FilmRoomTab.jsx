@@ -15,6 +15,7 @@ import {
   countClipsForFilter,
 } from '../utils/playEvents';
 import ClipTypeBadges from './ClipTypeBadges';
+import GameScopeFilter from './GameScopeFilter';
 
 function buildClipsFromGames(games) {
   return games.reduce((acc, game) => {
@@ -43,7 +44,13 @@ function buildClipsFromGames(games) {
   }, []);
 }
 
-export default function FilmRoomTab({ player, games, initialGameId = null }) {
+export default function FilmRoomTab({
+  player,
+  games,
+  gameScope,
+  onGameScopeChange,
+  initialGameId = null,
+}) {
   const [gameFilter, setGameFilter] = useState(initialGameId || 'all');
   const [filter, setFilter] = useState('all');
   const [selectedClipId, setSelectedClipId] = useState(null);
@@ -167,14 +174,30 @@ export default function FilmRoomTab({ player, games, initialGameId = null }) {
 
   if (games.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg font-medium">No games for {player?.displayName} yet.</p>
-        <p className="text-sm mt-2">Add a game in Game Logs and paste a YouTube link to use the film room.</p>
+      <div className="text-center py-12 text-gray-500 space-y-4">
+        <p className="text-lg font-medium">
+          No games in view for {player?.displayName}.
+        </p>
+        <p className="text-sm">Add a game in Game Logs, adjust filters, or paste a YouTube link.</p>
+        {gameScope && onGameScopeChange && (
+          <div className="flex justify-center">
+            <GameScopeFilter player={player} scope={gameScope} onChange={onGameScopeChange} />
+          </div>
+        )}
       </div>
     );
   }
 
   return (
+    <div className="space-y-4">
+      {gameScope && onGameScopeChange && (
+        <GameScopeFilter
+          player={player}
+          scope={gameScope}
+          onChange={onGameScopeChange}
+          className="no-print"
+        />
+      )}
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[85vh]">
       <div className="lg:col-span-2 flex flex-col h-full min-h-0">
         <div className="bg-slate-900 rounded-xl overflow-hidden shadow-xl flex-1 flex flex-col min-h-0">
@@ -356,6 +379,7 @@ export default function FilmRoomTab({ player, games, initialGameId = null }) {
           {positionLabel ? ` · ${positionLabel}` : ''}
         </div>
       </div>
+    </div>
     </div>
   );
 }

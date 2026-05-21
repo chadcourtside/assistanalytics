@@ -8,6 +8,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
   const [lastName, setLastName] = useState(player.lastName || '');
   const [jerseyNumber, setJerseyNumber] = useState(player.jerseyNumber || '');
   const [team, setTeam] = useState(player.team || '');
+  const [season, setSeason] = useState(player.season || '');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -16,6 +17,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
       lastName,
       jerseyNumber,
       team,
+      season,
     });
   };
 
@@ -95,6 +97,21 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
             />
             <p className="text-xs text-gray-400 mt-1">
               Used to group players on the Roster tab. Leave blank if not on a team yet.
+            </p>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+              Season
+            </label>
+            <input
+              type="text"
+              value={season}
+              onChange={(e) => setSeason(e.target.value)}
+              placeholder="e.g. 2025-26"
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Used as the default season filter on Dashboard, Benchmarks, and Film Room.
             </p>
           </div>
           <div className="flex gap-2 pt-2">

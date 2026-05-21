@@ -3,9 +3,14 @@ import { calcEFG } from './stats';
 
 export const TREND_METRICS = [
   { key: 'pts', label: 'Points', format: (v) => v.toFixed(0) },
+  { key: 'efg', label: 'eFG%', format: (v) => `${v.toFixed(0)}%` },
+  { key: 'ftPct', label: 'FT%', format: (v) => `${v.toFixed(0)}%` },
   { key: 'astHqpa', label: 'AST + HQPA', format: (v) => v.toFixed(1) },
   { key: 'ptch', label: 'Paint Touches', format: (v) => v.toFixed(1) },
   { key: 'tpPct', label: '3PT %', format: (v) => `${v.toFixed(0)}%` },
+  { key: 'oreb', label: 'OREB', format: (v) => v.toFixed(1) },
+  { key: 'blk', label: 'Blocks', format: (v) => v.toFixed(1) },
+  { key: 'defl', label: 'Deflections', format: (v) => v.toFixed(1) },
   { key: 'tov', label: 'Turnovers', format: (v) => v.toFixed(1) },
 ];
 
@@ -15,6 +20,8 @@ function metricValue(key, stats) {
       return stats.ast + (stats.hqpa || 0);
     case 'tpPct':
       return stats.threePa > 0 ? (stats.threePm / stats.threePa) * 100 : 0;
+    case 'ftPct':
+      return stats.fta > 0 ? (stats.ftm / stats.fta) * 100 : 0;
     case 'efg':
       return parseFloat(calcEFG(stats.fgm, stats.threePm, stats.fga) ?? 0);
     default:

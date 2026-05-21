@@ -1,6 +1,8 @@
 import { SCHEMA_VERSION } from '../models/appState';
 import { normalizeGameStats } from '../utils/gameStats';
 import { playEventsFromPlayByPlay } from '../utils/playEvents';
+import { normalizeGameType, DEFAULT_APP_META } from '../constants/gameTypes';
+import { DEFAULT_BENCHMARK_TARGETS } from '../data/defaultBenchmarkTargets';
 
 function normalizeGame(game) {
   const playByPlay = Array.isArray(game.playByPlay) ? game.playByPlay : [];
@@ -8,10 +10,19 @@ function normalizeGame(game) {
 
   return {
     ...game,
+    gameType: normalizeGameType(game.gameType),
     stats: normalizeGameStats(game.stats),
     playByPlay,
     playEvents,
   };
+}
+
+function mergeBenchmarkTargets(existing) {
+  const keys = new Set((existing || []).map((t) => t.metricKey));
+  const additions = DEFAULT_BENCHMARK_TARGETS.filter((t) => !keys.has(t.metricKey)).map(
+    (t) => ({ ...t })
+  );
+  return [...(existing || []), ...additions];
 }
 
 function migrateV1ToV2(state) {
@@ -19,6 +30,25 @@ function migrateV1ToV2(state) {
     ...state,
     schemaVersion: 2,
     games: (state.games || []).map(normalizeGame),
+  };
+}
+
+function migrateV2ToV3(state) {
+  return {
+    ...state,
+    schemaVersion: 3,
+    meta: {
+      ...DEFAULT_APP_META,
+      ...(state.meta || {}),
+    },
+    games: (state.games || []).map((game) => ({
+      ...normalizeGame(game),
+      gameType: normalizeGameType(game.gameType),
+    })),
+    benchmarkSets: (state.benchmarkSets || []).map((set) => ({
+      ...set,
+      targets: mergeBenchmarkTargets(set.targets),
+    })),
   };
 }
 
@@ -34,7 +64,12 @@ export function migrateState(state) {
     next = migrateV1ToV2(next);
   }
 
+  if (next.schemaVersion < 3) {
+    next = migrateV2ToV3(next);
+  }
+
   next.schemaVersion = SCHEMA_VERSION;
+  next.meta = { ...DEFAULT_APP_META, ...(next.meta || {}) };
   next.players = Array.isArray(next.players) ? next.players : [];
   next.games = (next.games || []).map(normalizeGame);
   next.benchmarkSets = Array.isArray(next.benchmarkSets) ? next.benchmarkSets : [];
