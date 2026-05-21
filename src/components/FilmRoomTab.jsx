@@ -11,38 +11,11 @@ import { formatGameTitle } from '../utils/gameStats';
 import {
   FILM_FILTERS,
   playEventMatchesFilter,
-  playEventsFromPlayByPlay,
   countClipsForFilter,
 } from '../utils/playEvents';
+import { buildClipsFromGames, isClipStarredForPlayer } from '../utils/filmClips';
 import ClipTypeBadges from './ClipTypeBadges';
 import GameScopeFilter from './GameScopeFilter';
-
-function buildClipsFromGames(games) {
-  return games.reduce((acc, game) => {
-    const videoId = getYoutubeId(game.videoUrl);
-    if (!videoId) return acc;
-
-    const events = playEventsFromPlayByPlay(game.playByPlay || []);
-
-    const clips = events
-      .map((event, index) => {
-        if (!event.timeStr) return null;
-        return {
-          id: `${game.id}-${index}`,
-          gameId: game.id,
-          opponent: game.opponent,
-          videoId,
-          timeStr: event.timeStr,
-          seconds: event.seconds ?? 0,
-          rawDesc: event.description ?? event.raw ?? '',
-          types: event.types ?? ['other'],
-        };
-      })
-      .filter(Boolean);
-
-    return [...acc, ...clips];
-  }, []);
-}
 
 export default function FilmRoomTab({
   player,
@@ -50,12 +23,15 @@ export default function FilmRoomTab({
   gameScope,
   onGameScopeChange,
   initialGameId = null,
+  onToggleStarredClip,
 }) {
   const [gameFilter, setGameFilter] = useState(initialGameId || 'all');
   const [filter, setFilter] = useState('all');
   const [selectedClipId, setSelectedClipId] = useState(null);
   const [preroll, setPreroll] = useState(() => loadFilmPreroll());
   const activeRowRef = useRef(null);
+
+  const gameById = useMemo(() => new Map(games.map((g) => [g.id, g])), [games]);
 
   const allClips = useMemo(() => buildClipsFromGames(games), [games]);
 
@@ -347,6 +323,8 @@ export default function FilmRoomTab({
             <div className="space-y-2">
               {filteredClips.map((clip, index) => {
                 const isActive = index === currentIndex;
+                const game = gameById.get(clip.gameId);
+                const isStarred = game ? isClipStarredForPlayer(game, clip.id) : false;
                 return (
                   <div
                     key={clip.id}
@@ -368,6 +346,24 @@ export default function FilmRoomTab({
                       </p>
                       <p className="text-xs text-gray-500 mt-1 truncate">vs {clip.opponent}</p>
                     </div>
+                    {onToggleStarredClip && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleStarredClip(clip.gameId, clip.id);
+                        }}
+                        className={`shrink-0 w-8 h-8 rounded-full text-lg leading-none no-print ${
+                          isStarred
+                            ? 'text-amber-500 hover:text-amber-600'
+                            : 'text-gray-300 hover:text-amber-400'
+                        }`}
+                        title={isStarred ? 'Remove from Player tab' : 'Send to Player tab'}
+                        aria-label={isStarred ? 'Unstar clip for player' : 'Star clip for player'}
+                      >
+                        ★
+                      </button>
+                    )}
                   </div>
                 );
               })}

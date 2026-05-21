@@ -24,7 +24,7 @@ function BenchmarkPill({ onTrack, total }) {
   );
 }
 
-function PlayerRow({ player, summary, isActive, onSelect, onEdit, onViewDashboard, onAddGame }) {
+function PlayerRow({ player, summary, isActive, onSelect, onEdit, onViewDashboard, onViewPlayer, onAddGame }) {
   return (
     <tr className={`border-b ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
       <td className="px-4 py-3">
@@ -63,6 +63,13 @@ function PlayerRow({ player, summary, isActive, onSelect, onEdit, onViewDashboar
       </td>
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1 justify-end">
+          <button
+            type="button"
+            onClick={() => onViewPlayer(player.id)}
+            className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded font-semibold"
+          >
+            Player
+          </button>
           <button
             type="button"
             onClick={() => onViewDashboard(player.id)}
@@ -198,6 +205,7 @@ export default function RosterTab({
                     onSelect={onSelectPlayer}
                     onEdit={onEditPlayer}
                     onViewDashboard={(id) => onNavigate('Dashboard', id)}
+                    onViewPlayer={(id) => onNavigate('Player', id)}
                     onAddGame={(id) => onNavigate('Game Logs', id)}
                   />
                 ))}

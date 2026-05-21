@@ -11,9 +11,10 @@ import AddPlayerForm from './components/AddPlayerForm';
 import StatGlossaryButton from './components/StatGlossaryButton';
 import DataTransferMenu from './components/DataTransferMenu';
 import BackupReminderBanner from './components/BackupReminderBanner';
+import PlayerViewTab from './components/PlayerViewTab';
 import EditPlayerModal from './components/EditPlayerModal';
 
-const TABS = ['Roster', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
+const TABS = ['Roster', 'Player', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Roster');
@@ -33,6 +34,9 @@ export default function App() {
     updateGameUrl,
     updateBenchmarkTargets,
     updatePlayer,
+    updatePlayerFocus,
+    markClipReviewed,
+    toggleStarredClip,
     importAppState,
     recordExport,
     updateMeta,
@@ -152,6 +156,19 @@ export default function App() {
                 onNavigate={navigateToPlayerTab}
               />
             )}
+            {activeTab === 'Player' && activePlayer && (
+              <PlayerViewTab
+                player={activePlayer}
+                games={scopedPlayerGames}
+                benchmarkSet={activeBenchmarkSet}
+                onSavePlayerFocus={(focus) => updatePlayerFocus(activePlayer.id, focus)}
+                onMarkClipReviewed={(clipId) => markClipReviewed(activePlayer.id, clipId)}
+                onOpenFilm={openFilmForGame}
+              />
+            )}
+            {activeTab === 'Player' && !activePlayer && (
+              <p className="text-gray-500 text-center py-12">Select a player from the Roster or header.</p>
+            )}
             {activeTab === 'Dashboard' && activePlayer && (
               <DashboardTab
                 player={activePlayer}
@@ -199,6 +216,7 @@ export default function App() {
                 gameScope={gameScope}
                 onGameScopeChange={setGameScope}
                 initialGameId={filmGameId}
+                onToggleStarredClip={toggleStarredClip}
               />
             )}
             {activeTab === 'Smart Film Room' && !activePlayer && (

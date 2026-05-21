@@ -82,6 +82,7 @@ export function gameToFormState(game) {
       season: '',
       stats: createEmptyStats(),
       playByPlayText: '',
+      playerTakeaway: '',
     };
   }
   const stats = normalizeGameStats(game.stats);
@@ -95,6 +96,7 @@ export function gameToFormState(game) {
     season: game.season || '',
     stats,
     playByPlayText: playByPlayToText(game.playByPlay),
+    playerTakeaway: game.playerTakeaway || '',
   };
 }
 
@@ -157,5 +159,6 @@ export function buildGamePayload(form, stats) {
     stats,
     playByPlay,
     playEvents: playEventsFromPlayByPlay(playByPlay),
+    playerTakeaway: form.playerTakeaway?.trim() || undefined,
   };
 }

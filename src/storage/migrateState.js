@@ -4,6 +4,8 @@ import { playEventsFromPlayByPlay } from '../utils/playEvents';
 import { normalizeGameType, DEFAULT_APP_META } from '../constants/gameTypes';
 import { DEFAULT_BENCHMARK_TARGETS } from '../data/defaultBenchmarkTargets';
 
+import { normalizePlayerFocus, normalizeReviewedClips } from '../utils/playerView';
+
 function normalizeGame(game) {
   const playByPlay = Array.isArray(game.playByPlay) ? game.playByPlay : [];
   const playEvents = playEventsFromPlayByPlay(playByPlay);
@@ -14,6 +16,16 @@ function normalizeGame(game) {
     stats: normalizeGameStats(game.stats),
     playByPlay,
     playEvents,
+    playerTakeaway: game.playerTakeaway ?? '',
+    starredClipIds: Array.isArray(game.starredClipIds) ? game.starredClipIds : [],
+  };
+}
+
+function normalizePlayer(player) {
+  return {
+    ...player,
+    playerFocus: normalizePlayerFocus(player.playerFocus),
+    reviewedClips: normalizeReviewedClips(player.reviewedClips),
   };
 }
 
@@ -52,6 +64,15 @@ function migrateV2ToV3(state) {
   };
 }
 
+function migrateV3ToV4(state) {
+  return {
+    ...state,
+    schemaVersion: 4,
+    players: (state.players || []).map(normalizePlayer),
+    games: (state.games || []).map(normalizeGame),
+  };
+}
+
 /**
  * Upgrade stored state to the current schema and normalize nested data.
  */
@@ -68,9 +89,13 @@ export function migrateState(state) {
     next = migrateV2ToV3(next);
   }
 
+  if (next.schemaVersion < 4) {
+    next = migrateV3ToV4(next);
+  }
+
   next.schemaVersion = SCHEMA_VERSION;
   next.meta = { ...DEFAULT_APP_META, ...(next.meta || {}) };
-  next.players = Array.isArray(next.players) ? next.players : [];
+  next.players = (next.players || []).map(normalizePlayer);
   next.games = (next.games || []).map(normalizeGame);
   next.benchmarkSets = Array.isArray(next.benchmarkSets) ? next.benchmarkSets : [];
 

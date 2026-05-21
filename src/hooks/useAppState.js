@@ -110,6 +110,8 @@ export function useAppState() {
       team: team?.trim() || undefined,
       position: position?.trim() || undefined,
       season: season?.trim() || undefined,
+      playerFocus: { weeklySummary: '', pinnedMetricKeys: [] },
+      reviewedClips: {},
       createdAt: ts,
       updatedAt: ts,
     };
@@ -186,15 +188,17 @@ export function useAppState() {
     }));
   }, []);
 
-  const updatePlayer = useCallback((playerId, { firstName, lastName, jerseyNumber, team, position, season }) => {
+  const updatePlayer = useCallback((playerId, updates) => {
     setState((prev) => {
-      const trimmedFirst = (firstName || '').trim();
-      if (!trimmedFirst) return prev;
+      const trimmedFirst = (updates.firstName || '').trim();
+      const existing = prev.players.find((p) => p.id === playerId);
+      if (!existing) return prev;
 
-      const trimmedLast = (lastName || '').trim();
+      const trimmedLast = (updates.lastName || '').trim();
+      const firstName = trimmedFirst || existing.firstName;
       const displayName = trimmedLast
-        ? `${trimmedFirst} ${trimmedLast}`
-        : trimmedFirst;
+        ? `${firstName} ${trimmedLast}`
+        : firstName;
 
       return {
         ...prev,
@@ -202,18 +206,72 @@ export function useAppState() {
           p.id === playerId
             ? {
                 ...p,
-                firstName: trimmedFirst,
-                lastName: trimmedLast || undefined,
-                displayName,
-                jerseyNumber: jerseyNumber?.trim() || undefined,
-                team: team?.trim() || undefined,
-                position: position?.trim() || undefined,
-                season: season?.trim() || p.season,
+                ...(updates.firstName != null
+                  ? {
+                      firstName,
+                      lastName: trimmedLast || undefined,
+                      displayName,
+                    }
+                  : {}),
+                ...(updates.jerseyNumber != null
+                  ? { jerseyNumber: updates.jerseyNumber?.trim() || undefined }
+                  : {}),
+                ...(updates.team != null ? { team: updates.team?.trim() || undefined } : {}),
+                ...(updates.position != null
+                  ? { position: updates.position?.trim() || undefined }
+                  : {}),
+                ...(updates.season != null
+                  ? { season: updates.season?.trim() || p.season }
+                  : {}),
+                ...(updates.playerFocus != null ? { playerFocus: updates.playerFocus } : {}),
                 updatedAt: nowIso(),
               }
             : p
         ),
       };
+    });
+  }, []);
+
+  const updatePlayerFocus = useCallback((playerId, playerFocus) => {
+    setState((prev) => ({
+      ...prev,
+      players: prev.players.map((p) =>
+        p.id === playerId ? { ...p, playerFocus, updatedAt: nowIso() } : p
+      ),
+    }));
+  }, []);
+
+  const markClipReviewed = useCallback((playerId, clipId, note) => {
+    setState((prev) => ({
+      ...prev,
+      players: prev.players.map((p) => {
+        if (p.id !== playerId) return p;
+        return {
+          ...p,
+          reviewedClips: {
+            ...(p.reviewedClips ?? {}),
+            [clipId]: { at: nowIso(), note: note?.trim() || undefined },
+          },
+          updatedAt: nowIso(),
+        };
+      }),
+    }));
+  }, []);
+
+  const toggleStarredClip = useCallback((gameId, clipId) => {
+    setState((prev) => {
+      const next = {
+        ...prev,
+        games: prev.games.map((g) => {
+          if (g.id !== gameId) return g;
+          const ids = new Set(g.starredClipIds ?? []);
+          if (ids.has(clipId)) ids.delete(clipId);
+          else ids.add(clipId);
+          return { ...g, starredClipIds: [...ids], updatedAt: nowIso() };
+        }),
+      };
+      maybeAutoBackup(next);
+      return next;
     });
   }, []);
 
@@ -252,6 +310,9 @@ export function useAppState() {
     updateGameUrl,
     updateBenchmarkTargets,
     updatePlayer,
+    updatePlayerFocus,
+    markClipReviewed,
+    toggleStarredClip,
     importAppState,
     recordExport,
     updateMeta,

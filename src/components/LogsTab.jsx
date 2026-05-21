@@ -3,6 +3,7 @@ import { getYoutubeId, parseTime } from '../utils/youtube';
 import { formatGameTitle, formatGameSubtitle, normalizeGameStats } from '../utils/gameStats';
 import { duplicateGameFormState } from '../utils/gameForm';
 import { GAME_TYPE_LABELS } from '../constants/gameTypes';
+import { countReviewedClips } from '../utils/playerView';
 import GameFormModal from './GameFormModal';
 
 export default function LogsTab({
@@ -124,6 +125,17 @@ export default function LogsTab({
                     <p className="text-sm text-gray-500">
                       {formatGameSubtitle(g, s)}
                     </p>
+                    {(g.playerTakeaway || '').trim() && (
+                      <p className="text-sm text-blue-800 mt-1 italic line-clamp-2">
+                        Player takeaway: {g.playerTakeaway.trim()}
+                      </p>
+                    )}
+                    {(g.starredClipIds?.length ?? 0) > 0 && (
+                      <p className="text-xs text-amber-700 mt-1 font-semibold">
+                        ★ {countReviewedClips(player, g.starredClipIds)}/{g.starredClipIds.length}{' '}
+                        player clips reviewed
+                      </p>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2 no-print">
                     <button

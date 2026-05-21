@@ -224,6 +224,22 @@ export default function GameFormModal({ mode, game, initialForm, onSave, onClose
           </div>
 
           <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+              Player takeaway
+            </label>
+            <textarea
+              value={form.playerTakeaway}
+              onChange={(e) => setField('playerTakeaway', e.target.value)}
+              rows={3}
+              placeholder="2–3 sentences for the athlete: what went well, what to work on..."
+              className={`${inputClass} font-sans`}
+            />
+            <p className="text-[11px] text-gray-400 mt-1">
+              Shows on the Player tab — plain language for the athlete, not stat jargon.
+            </p>
+          </div>
+
+          <div>
             <h3 className="text-sm font-bold text-gray-800 mb-2">Box Score</h3>
             {errors.stats && <p className="text-red-600 text-xs mb-2">{errors.stats}</p>}
             {quickIncrements}

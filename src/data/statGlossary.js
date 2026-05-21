@@ -155,6 +155,7 @@ export const STAT_GLOSSARY = [
     category: 'custom',
     description:
       'Touches in or around the paint tracked manually per game. Used as a development indicator for getting downhill or into the lane.',
+    playerBlurb: 'Get into the paint before you shoot — paint touches mean you attacked the basket.',
   },
   {
     id: 'hqpa',
@@ -163,6 +164,7 @@ export const STAT_GLOSSARY = [
     category: 'custom',
     description:
       'Plays that create advantage but may not be a traditional assist (e.g. hockey assist, screen assist). Counted separately and combined with assists in benchmarks as AST + HQPA.',
+    playerBlurb: 'You helped create an open look or advantage even without getting the assist.',
   },
   {
     id: 'liveBallTov',
@@ -171,6 +173,7 @@ export const STAT_GLOSSARY = [
     category: 'custom',
     description:
       'Live-ball turnovers charged to the player as the primary initiator (e.g. bad pass, ball-handling). Tracked separately from total turnovers.',
+    playerBlurb: 'A turnover where the other team gets a fast break — protect the ball.',
   },
   {
     id: 'defl',
@@ -178,6 +181,7 @@ export const STAT_GLOSSARY = [
     name: 'Deflections',
     category: 'custom',
     description: 'Deflections of passes or dribbles — a hustle/activity metric.',
+    playerBlurb: 'Get a hand on the ball — deflections show active defense and effort.',
   },
   {
     id: 'plusMinus',
@@ -194,6 +198,7 @@ export const STAT_GLOSSARY = [
     category: 'custom',
     formula: '(Assists + HQPA) per game average',
     description: 'Combined playmaking impact metric used on the Benchmarks tab.',
+    playerBlurb: 'Make plays that help teammates score or get open — assists plus HQPA.',
   },
   {
     id: 'tpPct',
@@ -202,6 +207,7 @@ export const STAT_GLOSSARY = [
     category: 'standard',
     formula: '3PM / 3PA × 100',
     description: 'Season or game three-point shooting percentage.',
+    playerBlurb: 'Take open threes with confidence — we track makes vs attempts.',
   },
   {
     id: 'perRate',
@@ -250,6 +256,12 @@ export function formatStatTooltip(entry) {
     parts.push('(Custom metric for this app — define consistently when logging.)');
   }
   return parts.join(' — ');
+}
+
+export function getPlayerStatBlurb(statIdOrKey) {
+  const entry = getStatEntry(statIdOrKey);
+  if (!entry) return '';
+  return entry.playerBlurb || entry.description || entry.name;
 }
 
 export const STANDARD_STATS = STAT_GLOSSARY.filter((e) => e.category === 'standard');
