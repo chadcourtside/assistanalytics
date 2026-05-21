@@ -23,6 +23,7 @@ export default function FilmRoomTab({
   gameScope,
   onGameScopeChange,
   initialGameId = null,
+  initialClipId = null,
   onToggleStarredClip,
 }) {
   const [gameFilter, setGameFilter] = useState(initialGameId || 'all');
@@ -98,6 +99,15 @@ export default function FilmRoomTab({
     if (initialGameId) setGameFilter(initialGameId);
   }, [initialGameId]);
 
+  useEffect(() => {
+    if (!initialClipId) return;
+    const clip = allClips.find((c) => c.id === initialClipId);
+    if (!clip) return;
+    setGameFilter(clip.gameId);
+    setFilter('all');
+    setSelectedClipId(initialClipId);
+  }, [initialClipId, allClips]);
+
   const handlePrerollChange = (value) => {
     const n = parseInt(value, 10);
     setPreroll(n);
@@ -105,10 +115,11 @@ export default function FilmRoomTab({
   };
 
   useEffect(() => {
+    if (initialClipId) return;
     if (!initialGameId || filteredClips.length === 0) return;
     const idx = filteredClips.findIndex((c) => c.gameId === initialGameId);
     if (idx >= 0) selectClipAtIndex(idx);
-  }, [initialGameId, filteredClips, selectClipAtIndex]);
+  }, [initialClipId, initialGameId, filteredClips, selectClipAtIndex]);
 
   // Scroll active row into view in playlist
   useEffect(() => {

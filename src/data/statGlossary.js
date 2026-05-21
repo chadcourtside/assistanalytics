@@ -45,6 +45,7 @@ export const STAT_GLOSSARY = [
     name: 'Three-Point Attempts',
     category: 'standard',
     description: 'Attempted three-point field goals.',
+    playerBlurb: 'Take open threes when they are there — we track attempts to see if you are hunting good looks.',
   },
   {
     id: 'ftm',
@@ -67,6 +68,7 @@ export const STAT_GLOSSARY = [
     category: 'standard',
     formula: 'FTM / FTA × 100',
     description: 'Free throw shooting percentage for the game or season.',
+    playerBlurb: 'Knock down your free throws — they are free points when you get to the line.',
   },
   {
     id: 'efg',
@@ -75,6 +77,7 @@ export const STAT_GLOSSARY = [
     category: 'standard',
     formula: '(FGM + 0.5 × 3PM) / FGA × 100',
     description: 'Shooting efficiency that gives extra weight to three-pointers.',
+    playerBlurb: 'Take good shots — threes count extra, so open looks and rim attempts both help your efficiency.',
   },
   {
     id: 'oreb',
@@ -82,6 +85,7 @@ export const STAT_GLOSSARY = [
     name: 'Offensive Rebounds',
     category: 'standard',
     description: 'Rebounds on the offensive glass. OREB + DREB should match total REB when all three are logged.',
+    playerBlurb: 'Crash the offensive glass — extra possessions help your team score.',
   },
   {
     id: 'dreb',
@@ -89,6 +93,7 @@ export const STAT_GLOSSARY = [
     name: 'Defensive Rebounds',
     category: 'standard',
     description: 'Rebounds on the defensive glass.',
+    playerBlurb: 'Finish the play with a defensive board — box out and secure the ball.',
   },
   {
     id: 'reb',
@@ -96,6 +101,7 @@ export const STAT_GLOSSARY = [
     name: 'Rebounds',
     category: 'standard',
     description: 'Total rebounds. If OREB and DREB are entered but REB is left blank, REB is computed as their sum.',
+    playerBlurb: 'Win the battle on the glass — rebounding gives your team extra chances.',
   },
   {
     id: 'blk',
@@ -103,6 +109,7 @@ export const STAT_GLOSSARY = [
     name: 'Blocks',
     category: 'standard',
     description: 'Blocked shots.',
+    playerBlurb: 'Protect the rim — a good block stops an easy score without fouling.',
   },
   {
     id: 'ast',
@@ -110,6 +117,7 @@ export const STAT_GLOSSARY = [
     name: 'Assists',
     category: 'standard',
     description: 'Passes that directly lead to a made basket.',
+    playerBlurb: 'Find open teammates — a good pass is as valuable as a bucket.',
   },
   {
     id: 'stl',
@@ -117,6 +125,7 @@ export const STAT_GLOSSARY = [
     name: 'Steals',
     category: 'standard',
     description: 'Steals of the basketball from the opponent.',
+    playerBlurb: 'Anticipate and jump the pass — steals create fast-break chances.',
   },
   {
     id: 'tov',
@@ -124,6 +133,7 @@ export const STAT_GLOSSARY = [
     name: 'Turnovers',
     category: 'standard',
     description: 'Total turnovers committed.',
+    playerBlurb: 'Take care of the ball — every turnover is a chance we give the other team.',
   },
   {
     id: 'astTo',
@@ -132,6 +142,7 @@ export const STAT_GLOSSARY = [
     category: 'standard',
     formula: 'Assists ÷ Turnovers (when TOV > 0)',
     description: 'When turnovers are zero, the dashboard shows assist count instead of a ratio.',
+    playerBlurb: 'Make plays without giving the ball away — more assists than turnovers is the goal.',
   },
   {
     id: 'pf',
@@ -139,6 +150,7 @@ export const STAT_GLOSSARY = [
     name: 'Personal Fouls',
     category: 'standard',
     description: 'Personal fouls committed.',
+    playerBlurb: 'Play hard without fouling — stay disciplined on defense.',
   },
   {
     id: 'foulsDrawn',
@@ -147,6 +159,7 @@ export const STAT_GLOSSARY = [
     category: 'standard',
     description:
       'Fouls drawn on the opponent (and-ones, shooting fouls drawn, etc.). Tag in play-by-play as “Foul drawn” for film clips.',
+    playerBlurb: 'Attack so defenders have to foul you — drawn fouls mean free throws.',
   },
   {
     id: 'ptch',

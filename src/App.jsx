@@ -19,6 +19,7 @@ const TABS = ['Roster', 'Player', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart
 export default function App() {
   const [activeTab, setActiveTab] = useState('Roster');
   const [filmGameId, setFilmGameId] = useState(null);
+  const [filmClipId, setFilmClipId] = useState(null);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [gameScope, setGameScope] = useState({ seasonFilter: 'all', gameTypeFilter: 'all' });
   const {
@@ -58,13 +59,26 @@ export default function App() {
   const openFilmForGame = (game) => {
     if (!game) return;
     setFilmGameId(game.id);
+    setFilmClipId(null);
     setActiveTab('Smart Film Room');
+  };
+
+  const openFilmForClip = (gameId, clipId) => {
+    if (!gameId || !clipId) return;
+    setFilmGameId(gameId);
+    setFilmClipId(clipId);
+    setActiveTab('Smart Film Room');
+  };
+
+  const clearFilmNavigation = () => {
+    setFilmGameId(null);
+    setFilmClipId(null);
   };
 
   const navigateToPlayerTab = (tab, playerId) => {
     setActivePlayerId(playerId);
     setActiveTab(tab);
-    if (tab !== 'Smart Film Room') setFilmGameId(null);
+    if (tab !== 'Smart Film Room') clearFilmNavigation();
   };
 
   const handleSavePlayer = (updates) => {
@@ -130,7 +144,7 @@ export default function App() {
               type="button"
               onClick={() => {
                 setActiveTab(tab);
-                if (tab !== 'Smart Film Room') setFilmGameId(null);
+                if (tab !== 'Smart Film Room') clearFilmNavigation();
               }}
               className={`whitespace-nowrap px-6 py-4 font-semibold text-sm transition-colors border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'}`}
             >
@@ -190,6 +204,7 @@ export default function App() {
                 updateGame={updateGame}
                 deleteGame={deleteGame}
                 updateGameUrl={updateGameUrl}
+                onOpenFilmClip={openFilmForClip}
               />
             )}
             {activeTab === 'Game Logs' && !activePlayer && (
@@ -216,6 +231,7 @@ export default function App() {
                 gameScope={gameScope}
                 onGameScopeChange={setGameScope}
                 initialGameId={filmGameId}
+                initialClipId={filmClipId}
                 onToggleStarredClip={toggleStarredClip}
               />
             )}

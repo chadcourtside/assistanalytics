@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { getYoutubeId, parseTime } from '../utils/youtube';
 import { formatGameTitle, formatGameSubtitle, normalizeGameStats } from '../utils/gameStats';
 import { duplicateGameFormState } from '../utils/gameForm';
 import { GAME_TYPE_LABELS } from '../constants/gameTypes';
 import { countReviewedClips } from '../utils/playerView';
 import GameFormModal from './GameFormModal';
+import PlayByPlayList from './PlayByPlayList';
 
 export default function LogsTab({
   player,
@@ -13,6 +13,7 @@ export default function LogsTab({
   updateGame,
   deleteGame,
   updateGameUrl,
+  onOpenFilmClip,
 }) {
   const [modalMode, setModalMode] = useState(null);
   const [editingGame, setEditingGame] = useState(null);
@@ -103,12 +104,11 @@ export default function LogsTab({
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
             <h3 className="font-bold text-blue-800">Film Integration</h3>
             <p className="text-sm text-blue-700 mt-1">
-              Paste a YouTube link on each game card, or include it when adding/editing a game.
-              Timestamps in play-by-play become clickable links in the Smart Film Room.
+              Paste a YouTube link on each game card. Play-by-play lines show clip tags — click a
+              timestamp or Film to jump to Smart Film Room at that moment.
             </p>
           </div>
           {games.map((g) => {
-            const ytId = getYoutubeId(g.videoUrl);
             const s = normalizeGameStats(g.stats);
             return (
               <div key={g.id} className="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
@@ -174,37 +174,7 @@ export default function LogsTab({
                   />
                 </div>
                 <div className="text-sm font-mono bg-slate-50 p-4 rounded-md border border-slate-100 h-64 overflow-y-auto">
-                  {g.playByPlay && g.playByPlay.length > 0 ? (
-                    g.playByPlay.map((play, idx) => {
-                      const timeMatch = play.match(/\[?\s*(\d{1,2}:\d{2})\s*\]?/);
-                      const timeStr = timeMatch ? timeMatch[1] : null;
-                      const sec = timeStr ? parseTime(timeStr) : 0;
-                      return (
-                        <div
-                          key={idx}
-                          className="mb-2 pl-2 border-l-2 border-gray-300 flex items-start gap-2"
-                        >
-                          {timeStr && ytId ? (
-                            <a
-                              href={`https://www.youtube.com/watch?v=${ytId}&t=${sec}s`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-blue-600 font-bold hover:underline shrink-0 bg-blue-100 px-1 rounded"
-                            >
-                              [{timeStr}]
-                            </a>
-                          ) : timeStr ? (
-                            <span className="text-gray-500 font-bold shrink-0">[{timeStr}]</span>
-                          ) : null}
-                          <span className="text-gray-700">
-                            {play.replace(/\[?\s*\d{1,2}:\d{2}\s*\]?/, '').trim()}
-                          </span>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-gray-400 italic">No play-by-play logged.</p>
-                  )}
+                  <PlayByPlayList game={g} onOpenFilmClip={onOpenFilmClip} />
                 </div>
               </div>
             );

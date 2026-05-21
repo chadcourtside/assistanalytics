@@ -135,12 +135,21 @@ export function normalizeReviewedClips(raw = {}) {
 export const PINNABLE_METRIC_KEYS = [
   'ptch',
   'astHqpa',
+  'hqpa',
   'liveBallTov',
   'tpPct',
   'ftPct',
+  'efg',
   'defl',
   'oreb',
+  'reb',
+  'blk',
+  'ast',
+  'astTo',
+  'stl',
+  'foulsDrawn',
   'tov',
+  'threePa',
 ];
 
 export function getBenchmarkStatusLabel(currentVal, target12, isLowerBetter, metricKey) {
