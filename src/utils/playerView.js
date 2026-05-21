@@ -142,3 +142,82 @@ export const PINNABLE_METRIC_KEYS = [
   'oreb',
   'tov',
 ];
+
+export function getBenchmarkStatusLabel(currentVal, target12, isLowerBetter, metricKey) {
+  const color = getBenchmarkStatusColor(currentVal, target12, isLowerBetter, metricKey);
+  if (color.includes('green')) return 'On track';
+  if (color.includes('yellow')) return 'Approaching';
+  if (color.includes('red')) return 'Needs focus';
+  return 'No data';
+}
+
+export function buildBenchmarkReportRows(benchmarkSet, averages, maxRows = 5) {
+  const targets = (benchmarkSet?.targets ?? []).filter((t) => t.isKey).slice(0, maxRows);
+
+  return targets.map((t) => {
+    const val = getBenchmarkMetricValue(t.metricKey, averages);
+    const v = parseFloat(val);
+    const display =
+      Number.isNaN(v) ? '—' : `${v.toFixed(1)}${t.format ?? ''}`;
+
+    return {
+      label: t.label,
+      current: display,
+      target12: t.target12,
+      status: getBenchmarkStatusLabel(val, t.target12, t.isLowerBetter, t.metricKey),
+    };
+  });
+}
+
+/** Aggregated payload for the printable / PDF player report. */
+export function buildPlayerReportData({ player, games, benchmarkSet }) {
+  const gameList = games ?? [];
+  const focusBullets = buildFocusBullets(player, benchmarkSet, gameList);
+  const lastGame = buildLastGameSummary(gameList[0] ?? null, player);
+  const starredClips = collectStarredClips(gameList).map((clip) => ({
+    timeStr: clip.timeStr,
+    rawDesc: clip.rawDesc,
+    opponent: clip.opponent,
+    watchUrl: getClipWatchUrl(clip),
+    reviewed: isClipReviewed(player, clip.id),
+  }));
+  const reviewedCount = countReviewedClips(
+    player,
+    collectStarredClips(gameList).map((c) => c.id)
+  );
+
+  const totals = sumGameStats(gameList);
+  const averages = seasonAverages(totals, gameList.length || 1);
+  const benchmarkRows = buildBenchmarkReportRows(benchmarkSet, averages);
+
+  const pinnedKeys = player?.playerFocus?.pinnedMetricKeys ?? [];
+  const pinnedBlurbs = pinnedKeys
+    .map((key) => ({
+      label: getStatEntry(key)?.abbrev || key,
+      blurb: getStatEntry(key)?.playerBlurb || getStatEntry(key)?.description || '',
+    }))
+    .filter((x) => x.blurb);
+
+  return {
+    playerName: player?.displayName || 'Player',
+    team: player?.team,
+    season: player?.season,
+    generatedAt: new Date().toLocaleDateString(undefined, {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+    gamesInView: gameList.length,
+    focusBullets,
+    lastGame,
+    starredClips,
+    reviewedCount,
+    totalStarred: starredClips.length,
+    benchmarkRows,
+    pinnedBlurbs,
+  };
+}
+
+export function buildPlayerReportFilename(playerName) {
+  return `${(playerName || 'Player').replace(/\s+/g, '_')}_PlayerReport.pdf`;
+}

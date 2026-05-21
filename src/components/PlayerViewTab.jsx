@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import {
   buildFocusBullets,
   buildLastGameSummary,
+  buildPlayerReportData,
+  buildPlayerReportFilename,
   collectStarredClips,
   countReviewedClips,
   isClipReviewed,
@@ -11,7 +13,9 @@ import {
 } from '../utils/playerView';
 import { getPlayerStatBlurb } from '../data/statGlossary';
 import { getStatEntry } from '../data/statGlossary';
+import { exportPDF } from '../utils/exportPdf';
 import ClipTypeBadges from './ClipTypeBadges';
+import PlayerReportDocument from './PlayerReportDocument';
 
 function FocusBulletList({ bullets }) {
   if (!bullets.length) return null;
@@ -138,6 +142,15 @@ export default function PlayerViewTab({
       .filter((x) => x.blurb);
   }, [player]);
 
+  const reportData = useMemo(
+    () => buildPlayerReportData({ player, games, benchmarkSet }),
+    [player, games, benchmarkSet]
+  );
+
+  const handleDownloadReport = () => {
+    exportPDF('player-report-pdf', buildPlayerReportFilename(player.displayName));
+  };
+
   if (games.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -149,9 +162,27 @@ export default function PlayerViewTab({
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">{player.displayName}</h2>
-        <p className="text-sm text-gray-500 mt-1">Your focus — what to work on and what to watch</p>
+      <div className="flex flex-wrap items-start justify-between gap-3 no-print">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">{player.displayName}</h2>
+          <p className="text-sm text-gray-500 mt-1">Your focus — what to work on and what to watch</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleDownloadReport}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-semibold shrink-0"
+        >
+          Download Player Report
+        </button>
+      </div>
+
+      {/* Off-screen PDF source (html2pdf capture) */}
+      <div
+        id="player-report-pdf"
+        className="fixed left-[-10000px] top-0 pointer-events-none"
+        aria-hidden="true"
+      >
+        <PlayerReportDocument report={reportData} />
       </div>
 
       <section className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-xl p-5 shadow-md">

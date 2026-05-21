@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildFocusBullets,
+  buildPlayerReportData,
+  buildPlayerReportFilename,
+  getBenchmarkStatusLabel,
   collectStarredClips,
   isClipReviewed,
   countReviewedClips,
@@ -30,6 +33,44 @@ describe('playerView focus', () => {
     const bullets = buildFocusBullets(player, benchmarkSet, games);
     expect(bullets.length).toBeGreaterThan(0);
     expect(bullets.some((b) => /paint/i.test(b))).toBe(true);
+  });
+});
+
+describe('player report', () => {
+  it('builds report payload with focus, clips, and benchmarks', () => {
+    const player = {
+      displayName: 'Avery',
+      team: 'Gold',
+      playerFocus: { weeklySummary: 'Work on paint touches' },
+      reviewedClips: {},
+    };
+    const games = [
+      {
+        id: 'g1',
+        opponent: 'Hawks',
+        playerTakeaway: 'Great effort',
+        stats: { mins: 10, pts: 8, ast: 2, ptch: 4, tov: 1, hqpa: 0, threePa: 0, fta: 0, fgm: 3, fga: 5, threePm: 0 },
+        playByPlay: [],
+      },
+    ];
+    const benchmarkSet = {
+      targets: [
+        { metricKey: 'ptch', label: 'Paint Touches', target12: '5+', isKey: true },
+      ],
+    };
+    const report = buildPlayerReportData({ player, games, benchmarkSet });
+    expect(report.playerName).toBe('Avery');
+    expect(report.focusBullets).toContain('Work on paint touches');
+    expect(report.lastGame?.takeaway).toBe('Great effort');
+    expect(report.benchmarkRows.length).toBe(1);
+  });
+
+  it('formats report filename', () => {
+    expect(buildPlayerReportFilename('Avery Smith')).toBe('Avery_Smith_PlayerReport.pdf');
+  });
+
+  it('labels benchmark status', () => {
+    expect(getBenchmarkStatusLabel(5, '5+', false, 'ptch')).toBe('On track');
   });
 });
 
