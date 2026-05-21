@@ -20,10 +20,11 @@ describe('normalizeGameStats', () => {
     expect(s.foulsDrawn).toBe(2);
   });
 
-  it('includes free throws', () => {
-    const s = normalizeGameStats({ ftm: 3, fta: 4 });
-    expect(s.ftm).toBe(3);
-    expect(s.fta).toBe(4);
+  it('includes playmaking stats', () => {
+    const s = normalizeGameStats({ hqpa: 2, secondAst: 1, screenAst: 3 });
+    expect(s.hqpa).toBe(2);
+    expect(s.secondAst).toBe(1);
+    expect(s.screenAst).toBe(3);
   });
 });
 

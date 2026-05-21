@@ -10,6 +10,8 @@ export const PLAY_EVENT_TYPES = {
   MISS_FT: 'missFt',
   ASSIST: 'assist',
   HQPA: 'hqpa',
+  SECOND_ASSIST: 'secondAst',
+  SCREEN_ASSIST: 'screenAst',
   PAINT_TOUCH: 'paintTouch',
   TURNOVER: 'turnover',
   LIVE_BALL_TOV: 'liveBallTov',
@@ -66,6 +68,16 @@ export const PLAY_EVENT_BADGE_META = {
     short: 'HQPA',
     className: 'bg-violet-100 text-violet-800 border-violet-200',
     darkClassName: 'bg-violet-900/60 text-violet-200 border-violet-800',
+  },
+  [PLAY_EVENT_TYPES.SECOND_ASSIST]: {
+    short: '2ND',
+    className: 'bg-purple-100 text-purple-900 border-purple-200',
+    darkClassName: 'bg-purple-900/60 text-purple-200 border-purple-800',
+  },
+  [PLAY_EVENT_TYPES.SCREEN_ASSIST]: {
+    short: 'Scr',
+    className: 'bg-pink-100 text-pink-900 border-pink-200',
+    darkClassName: 'bg-pink-900/60 text-pink-200 border-pink-800',
   },
   [PLAY_EVENT_TYPES.PAINT_TOUCH]: {
     short: 'PTCH',
@@ -144,6 +156,8 @@ const BADGE_DISPLAY_ORDER = [
   PLAY_EVENT_TYPES.MISS,
   PLAY_EVENT_TYPES.ASSIST,
   PLAY_EVENT_TYPES.HQPA,
+  PLAY_EVENT_TYPES.SECOND_ASSIST,
+  PLAY_EVENT_TYPES.SCREEN_ASSIST,
   PLAY_EVENT_TYPES.PAINT_TOUCH,
   PLAY_EVENT_TYPES.LIVE_BALL_TOV,
   PLAY_EVENT_TYPES.TURNOVER,
@@ -177,6 +191,8 @@ export const FILM_FILTERS = [
   { id: 'missFt', label: 'Miss FT', types: [PLAY_EVENT_TYPES.MISS_FT] },
   { id: 'assist', label: 'Assist', types: [PLAY_EVENT_TYPES.ASSIST] },
   { id: 'hqpa', label: 'HQPA', types: [PLAY_EVENT_TYPES.HQPA] },
+  { id: 'secondAst', label: '2nd Assist', types: [PLAY_EVENT_TYPES.SECOND_ASSIST] },
+  { id: 'screenAst', label: 'Screen Assist', types: [PLAY_EVENT_TYPES.SCREEN_ASSIST] },
   { id: 'paintTouch', label: 'Paint Touch', types: [PLAY_EVENT_TYPES.PAINT_TOUCH] },
   { id: 'turnover', label: 'Turnover', types: [PLAY_EVENT_TYPES.TURNOVER] },
   { id: 'liveBallTov', label: 'LB TOV', types: [PLAY_EVENT_TYPES.LIVE_BALL_TOV] },
@@ -232,8 +248,16 @@ export function inferPlayEventTypes(description) {
   if (THREE_PT_RE.test(lower)) types.push(PLAY_EVENT_TYPES.THREE_PT);
   if (TWO_PT_RE.test(lower)) types.push(PLAY_EVENT_TYPES.TWO_PT);
 
-  if (/\bhqpa\b|clean entry/.test(lower)) types.push(PLAY_EVENT_TYPES.HQPA);
-  if (/\bassist\b|\bassists\b/.test(lower)) types.push(PLAY_EVENT_TYPES.ASSIST);
+  const isSecondAssist = /\b(?:2nd|second)\s*assist\b|\b2nd\s*ast\b|\bhockey assist\b/.test(lower);
+  const isScreenAssist = /\bscreen assist\b|\bscr\s*ast\b/.test(lower);
+
+  if (isSecondAssist) types.push(PLAY_EVENT_TYPES.SECOND_ASSIST);
+  if (isScreenAssist) types.push(PLAY_EVENT_TYPES.SCREEN_ASSIST);
+
+  if (/\bhqpa\b|clean entry|potential assist/.test(lower)) types.push(PLAY_EVENT_TYPES.HQPA);
+  if ((/\bassist\b|\bassists\b/.test(lower)) && !isSecondAssist && !isScreenAssist) {
+    types.push(PLAY_EVENT_TYPES.ASSIST);
+  }
 
   if (/paint touch|\bptch\b/.test(lower)) types.push(PLAY_EVENT_TYPES.PAINT_TOUCH);
 

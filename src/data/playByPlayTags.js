@@ -17,6 +17,8 @@ export const PLAY_BY_PLAY_TAG_GROUPS = [
     tags: [
       { label: 'Assist', line: 'Assist' },
       { label: 'HQPA', line: 'HQPA' },
+      { label: '2nd Assist', line: '2nd Assist' },
+      { label: 'Screen assist', line: 'Screen assist' },
       { label: 'Paint touch', line: 'Paint touch' },
     ],
   },

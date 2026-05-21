@@ -121,9 +121,12 @@ export function getClipWatchUrl(clip, preroll = 3) {
 }
 
 export function normalizePlayerFocus(raw = {}) {
+  const pinnedMetricKeys = (Array.isArray(raw.pinnedMetricKeys) ? raw.pinnedMetricKeys : [])
+    .map((key) => (key === 'astHqpa' ? 'hqpa' : key))
+    .filter((key) => key !== 'astHqpa');
   return {
     weeklySummary: raw.weeklySummary ?? '',
-    pinnedMetricKeys: Array.isArray(raw.pinnedMetricKeys) ? raw.pinnedMetricKeys : [],
+    pinnedMetricKeys,
   };
 }
 
@@ -134,8 +137,9 @@ export function normalizeReviewedClips(raw = {}) {
 
 export const PINNABLE_METRIC_KEYS = [
   'ptch',
-  'astHqpa',
   'hqpa',
+  'secondAst',
+  'screenAst',
   'liveBallTov',
   'tpPct',
   'ftPct',

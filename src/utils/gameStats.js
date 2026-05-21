@@ -28,6 +28,8 @@ export function normalizeGameStats(raw = {}) {
     reb,
     ast: raw.ast ?? 0,
     hqpa: raw.hqpa ?? 0,
+    secondAst: raw.secondAst ?? 0,
+    screenAst: raw.screenAst ?? 0,
     tov: raw.tov ?? 0,
     liveBallTov,
     stl: raw.stl ?? 0,

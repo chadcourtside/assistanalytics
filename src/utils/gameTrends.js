@@ -5,7 +5,8 @@ export const TREND_METRICS = [
   { key: 'pts', label: 'Points', format: (v) => v.toFixed(0) },
   { key: 'efg', label: 'eFG%', format: (v) => `${v.toFixed(0)}%` },
   { key: 'ftPct', label: 'FT%', format: (v) => `${v.toFixed(0)}%` },
-  { key: 'astHqpa', label: 'AST + HQPA', format: (v) => v.toFixed(1) },
+  { key: 'hqpa', label: 'HQPA', format: (v) => v.toFixed(1) },
+  { key: 'secondAst', label: '2nd Assists', format: (v) => v.toFixed(1) },
   { key: 'ptch', label: 'Paint Touches', format: (v) => v.toFixed(1) },
   { key: 'tpPct', label: '3PT %', format: (v) => `${v.toFixed(0)}%` },
   { key: 'oreb', label: 'OREB', format: (v) => v.toFixed(1) },
@@ -16,8 +17,6 @@ export const TREND_METRICS = [
 
 function metricValue(key, stats) {
   switch (key) {
-    case 'astHqpa':
-      return stats.ast + (stats.hqpa || 0);
     case 'tpPct':
       return stats.threePa > 0 ? (stats.threePm / stats.threePa) * 100 : 0;
     case 'ftPct':

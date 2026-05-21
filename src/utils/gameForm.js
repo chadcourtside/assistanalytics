@@ -18,6 +18,8 @@ export const STAT_FIELDS = [
   { key: 'blk', label: 'BLK' },
   { key: 'ast', label: 'AST' },
   { key: 'hqpa', label: 'HQPA' },
+  { key: 'secondAst', label: '2ND AST' },
+  { key: 'screenAst', label: 'SCR AST' },
   { key: 'tov', label: 'TOV' },
   { key: 'liveBallTov', label: 'LB TOV' },
   { key: 'stl', label: 'STL' },

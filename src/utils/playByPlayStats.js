@@ -15,6 +15,8 @@ export const PBP_COUNTABLE_STATS = [
   'reb',
   'ast',
   'hqpa',
+  'secondAst',
+  'screenAst',
   'ptch',
   'tov',
   'liveBallTov',
@@ -37,6 +39,8 @@ const STAT_LABELS = {
   reb: 'REB',
   ast: 'AST',
   hqpa: 'HQPA',
+  secondAst: '2ND AST',
+  screenAst: 'SCR AST',
   ptch: 'PTCH',
   tov: 'TOV',
   liveBallTov: 'LB TOV',
@@ -92,6 +96,8 @@ function applyTypesToCounts(types, counts, rebGeneric) {
 
   if (types.includes(PLAY_EVENT_TYPES.ASSIST)) counts.ast += 1;
   if (types.includes(PLAY_EVENT_TYPES.HQPA)) counts.hqpa += 1;
+  if (types.includes(PLAY_EVENT_TYPES.SECOND_ASSIST)) counts.secondAst += 1;
+  if (types.includes(PLAY_EVENT_TYPES.SCREEN_ASSIST)) counts.screenAst += 1;
   if (types.includes(PLAY_EVENT_TYPES.PAINT_TOUCH)) counts.ptch += 1;
 
   if (types.includes(PLAY_EVENT_TYPES.LIVE_BALL_TOV)) {

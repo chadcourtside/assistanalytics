@@ -35,6 +35,13 @@ describe('inferPlayEventTypes', () => {
     expect(types).toContain(PLAY_EVENT_TYPES.ASSIST);
   });
 
+  it('tags second and screen assists separately from HQPA', () => {
+    expect(inferPlayEventTypes('4:10 2nd Assist')).toContain(PLAY_EVENT_TYPES.SECOND_ASSIST);
+    expect(inferPlayEventTypes('4:10 2nd Assist')).not.toContain(PLAY_EVENT_TYPES.HQPA);
+    expect(inferPlayEventTypes('5:05 Screen assist')).toContain(PLAY_EVENT_TYPES.SCREEN_ASSIST);
+    expect(inferPlayEventTypes('5:05 Hockey assist')).toContain(PLAY_EVENT_TYPES.SECOND_ASSIST);
+  });
+
   it('tags LB TOV without generic turnover', () => {
     const types = inferPlayEventTypes('6:50 LB TOV');
     expect(types).toContain(PLAY_EVENT_TYPES.LIVE_BALL_TOV);

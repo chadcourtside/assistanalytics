@@ -28,6 +28,19 @@ describe('countStatsFromPlayByPlay', () => {
     expect(counts.reb).toBe(1);
   });
 
+  it('counts playmaking tags from play-by-play', () => {
+    const counts = countStatsFromPlayByPlay([
+      '6:14 Assist',
+      '7:00 HQPA',
+      '7:30 2nd Assist',
+      '8:00 Screen assist',
+    ]);
+    expect(counts.ast).toBe(1);
+    expect(counts.hqpa).toBe(1);
+    expect(counts.secondAst).toBe(1);
+    expect(counts.screenAst).toBe(1);
+  });
+
   it('ignores custom notes', () => {
     const counts = countStatsFromPlayByPlay(['3:50 Note: Great hustle']);
     expect(counts.fgm).toBe(0);

@@ -37,6 +37,11 @@ function mergeBenchmarkTargets(existing) {
   return [...(existing || []), ...additions];
 }
 
+function migrateBenchmarkTargetsV5(targets) {
+  const withoutAstHqpa = (targets || []).filter((t) => t.metricKey !== 'astHqpa');
+  return mergeBenchmarkTargets(withoutAstHqpa);
+}
+
 function migrateV1ToV2(state) {
   return {
     ...state,
@@ -73,6 +78,19 @@ function migrateV3ToV4(state) {
   };
 }
 
+function migrateV4ToV5(state) {
+  return {
+    ...state,
+    schemaVersion: 5,
+    players: (state.players || []).map(normalizePlayer),
+    games: (state.games || []).map(normalizeGame),
+    benchmarkSets: (state.benchmarkSets || []).map((set) => ({
+      ...set,
+      targets: migrateBenchmarkTargetsV5(set.targets),
+    })),
+  };
+}
+
 /**
  * Upgrade stored state to the current schema and normalize nested data.
  */
@@ -91,6 +109,10 @@ export function migrateState(state) {
 
   if (next.schemaVersion < 4) {
     next = migrateV3ToV4(next);
+  }
+
+  if (next.schemaVersion < 5) {
+    next = migrateV4ToV5(next);
   }
 
   next.schemaVersion = SCHEMA_VERSION;

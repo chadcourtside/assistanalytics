@@ -50,7 +50,7 @@ function PlayerRow({ player, summary, isActive, onSelect, onEdit, onViewDashboar
         {summary.gameCount > 0 ? summary.averages.pts.toFixed(1) : '—'}
       </td>
       <td className="px-4 py-3 text-center font-medium">
-        {summary.gameCount > 0 ? summary.averages.astHqpa.toFixed(1) : '—'}
+        {summary.gameCount > 0 ? summary.averages.ast.toFixed(1) : '—'}
       </td>
       <td className="px-4 py-3 text-center font-medium">
         {summary.gameCount > 0 ? summary.averages.ptch.toFixed(1) : '—'}
@@ -189,7 +189,7 @@ export default function RosterTab({
                   <th className="px-4 py-2 text-center">Games</th>
                   <th className="px-4 py-2">Last game</th>
                   <th className="px-4 py-2 text-center">Pts/g</th>
-                  <th className="px-4 py-2 text-center">AST+HQPA</th>
+                  <th className="px-4 py-2 text-center">AST/g</th>
                   <th className="px-4 py-2 text-center">PTCH/g</th>
                   <th className="px-4 py-2 text-center">Key goals</th>
                   <th className="px-4 py-2 text-right">Actions</th>

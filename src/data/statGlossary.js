@@ -173,11 +173,30 @@ export const STAT_GLOSSARY = [
   {
     id: 'hqpa',
     abbrev: 'HQPA',
-    name: 'High-Quality Play Assist',
+    name: 'High-Quality Potential Assist',
     category: 'custom',
     description:
-      'Plays that create advantage but may not be a traditional assist (e.g. hockey assist, screen assist). Counted separately and combined with assists in benchmarks as AST + HQPA.',
-    playerBlurb: 'You helped create an open look or advantage even without getting the assist.',
+      'A potential assist that creates an open or advantaged shot: layup, open catch-and-shoot three, close-range paint touch, or a clear advantage shot within 0–1 dribbles. Tracked separately from traditional assists.',
+    playerBlurb:
+      'Your pass set up a great look — even if it did not become an official assist.',
+  },
+  {
+    id: 'secondAst',
+    abbrev: '2ND AST',
+    name: 'Second Assist',
+    category: 'custom',
+    description:
+      'The pass that leads to the assist (hockey assist) — one pass before the made basket.',
+    playerBlurb: 'The pass before the assist counts — you started the play that led to a score.',
+  },
+  {
+    id: 'screenAst',
+    abbrev: 'SCR AST',
+    name: 'Screen Assist',
+    category: 'custom',
+    description:
+      'A screen that directly leads to a made basket or an advantaged shot for a teammate.',
+    playerBlurb: 'Your screen freed up a teammate for a good look or score.',
   },
   {
     id: 'liveBallTov',
@@ -203,15 +222,6 @@ export const STAT_GLOSSARY = [
     category: 'custom',
     description:
       'Point differential while on court, entered manually per game in this app. Not calculated from lineup data.',
-  },
-  {
-    id: 'astHqpa',
-    abbrev: 'AST + HQPA',
-    name: 'Assists plus High-Quality Play Assists',
-    category: 'custom',
-    formula: '(Assists + HQPA) per game average',
-    description: 'Combined playmaking impact metric used on the Benchmarks tab.',
-    playerBlurb: 'Make plays that help teammates score or get open — assists plus HQPA.',
   },
   {
     id: 'tpPct',
@@ -242,7 +252,10 @@ const aliases = {
   '3pt%': 'tpPct',
   'ft%': 'ftPct',
   'efg%': 'efg',
-  'ast + hqpa': 'astHqpa',
+  '2nd ast': 'secondAst',
+  'second assist': 'secondAst',
+  'scr ast': 'screenAst',
+  'screen assist': 'screenAst',
   'initiator lb tov': 'liveBallTov',
   fd: 'foulsDrawn',
   'fouls drawn': 'foulsDrawn',
