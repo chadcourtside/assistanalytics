@@ -93,8 +93,9 @@ Open the URL Wrangler prints (API routes under `/api/*` run as Pages Functions f
 ### How cloud sync works
 
 - **Sign up** with email + password; optionally create a team (e.g. `7th Grade Gold`) during signup.
-- **Invite others** — owners open **Team** in the header for the member list, invite code/link, and role controls.
-- **Auto-save** — edits debounce to the cloud (~1.5s). `localStorage` remains an offline cache.
+- **Invite others** — owners open **Team** for coach/parent invite links, member list, roles, and removal.
+- **Parent access** — share the **parent link** (`?join=CODE&role=viewer`) or choose viewer when joining; viewers get read-only UI.
+- **Auto-save** — edits debounce to the cloud (~1.5s). Failed saves queue locally and retry when back online.
 - **Conflicts** — if two devices save at once, the header offers **Load cloud version**.
 - **Local-only mode** — choose **Continue locally without cloud sync** on the login screen (same as pre-cloud behavior).
 

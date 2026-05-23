@@ -27,13 +27,16 @@ export function useAuth() {
         applySession(data);
         return data;
       }
-      setAuth((prev) => ({
-        ...prev,
-        status: 'unauthed',
-        user: data?.user ?? null,
-        team: null,
-        error: null,
-      }));
+      if (data?.user) {
+        setAuth({
+          status: 'needs_team',
+          user: data.user,
+          team: null,
+          error: null,
+        });
+        return data;
+      }
+      setAuth({ status: 'unauthed', user: null, team: null, error: null });
       return data;
     } catch (err) {
       if (err.status === 503) {
@@ -95,10 +98,10 @@ export function useAuth() {
     }
   }, [applySession]);
 
-  const joinTeam = useCallback(async ({ inviteCode }) => {
+  const joinTeam = useCallback(async ({ inviteCode, role }) => {
     setAuth((prev) => ({ ...prev, error: null }));
     try {
-      const data = await cloudApi.joinTeam({ inviteCode });
+      const data = await cloudApi.joinTeam({ inviteCode, role });
       applySession(data);
       return { success: true, data };
     } catch (err) {

@@ -17,11 +17,21 @@ import {
   readCloudSyncMeta,
   writeCloudSyncMeta,
 } from '../storage/storageAdapter';
+import {
+  clearSyncQueue,
+  isRetryableSyncError,
+  markQueueAttempt,
+  queueCloudSave,
+  readSyncQueue,
+  shouldRetryQueue,
+} from '../storage/syncQueue';
 import { cloudPayloadToState, stateToCloudPayload } from '../utils/cloudState';
 import { fetchCloudState, saveCloudState } from '../api/cloudApi';
 import { useAuth } from './useAuth';
+import { canEditTeamData } from '../utils/accessControl';
 
 const CLOUD_SAVE_DELAY_MS = 1500;
+const SESSION_REFRESH_MS = 30_000;
 
 function enrichGamePayload(payload) {
   const playByPlay = payload.playByPlay ?? [];
@@ -51,9 +61,10 @@ export function useAppState() {
   } = useAuth();
 
   const [state, setState] = useState(loadLocalState);
-  const [syncStatus, setSyncStatus] = useState('idle');
+  const [syncStatus, setSyncStatus] = useState(() => (readSyncQueue() ? 'pending' : 'idle'));
   const [syncError, setSyncError] = useState(null);
   const [conflictInfo, setConflictInfo] = useState(null);
+  const [hasPendingSync, setHasPendingSync] = useState(() => Boolean(readSyncQueue()));
 
   const cloudUpdatedAtRef = useRef(readCloudSyncMeta().updatedAt);
   const skipCloudSaveRef = useRef(true);
@@ -64,23 +75,88 @@ export function useAppState() {
 
   stateRef.current = state;
 
+  const canEdit = useMemo(() => canEditTeamData(auth), [auth]);
+
   const pushCloudState = useCallback(async (nextState, { force = false } = {}) => {
-    if (auth.status !== 'authed') return;
+    if (auth.status !== 'authed') return false;
+    if (!canEditTeamData(auth)) return false;
 
     setSyncStatus('syncing');
     setSyncError(null);
 
+    const payload = stateToCloudPayload(nextState);
+
     try {
-      const result = await saveCloudState(
-        stateToCloudPayload(nextState),
-        force ? null : cloudUpdatedAtRef.current
-      );
+      const result = await saveCloudState(payload, force ? null : cloudUpdatedAtRef.current);
       cloudUpdatedAtRef.current = result.updatedAt;
       writeCloudSyncMeta({ updatedAt: result.updatedAt });
+      clearSyncQueue();
+      setHasPendingSync(false);
       setSyncStatus('saved');
+      setConflictInfo(null);
+      return true;
+    } catch (err) {
+      if (err.status === 409 && err.body?.state) {
+        setSyncStatus('conflict');
+        setConflictInfo({
+          updatedAt: err.body.updatedAt,
+          state: cloudPayloadToState(err.body.state),
+        });
+        setSyncError('Cloud data was updated on another device.');
+        return false;
+      }
+
+      const message = err.body?.error || err.message || 'Cloud sync failed';
+      if (isRetryableSyncError(err)) {
+        queueCloudSave({
+          state: payload,
+          expectedUpdatedAt: force ? null : cloudUpdatedAtRef.current,
+          errorMessage: message,
+        });
+        setHasPendingSync(true);
+        setSyncStatus('pending');
+        setSyncError('Offline — changes saved locally and will retry automatically.');
+      } else {
+        setSyncStatus('error');
+        setSyncError(message);
+      }
+      return false;
+    }
+  }, [auth]);
+
+  const flushPendingSync = useCallback(async () => {
+    if (auth.status !== 'authed' || !canEditTeamData(auth)) return;
+
+    const entry = readSyncQueue();
+    if (!entry?.state) {
+      setHasPendingSync(false);
+      return;
+    }
+
+    if (!shouldRetryQueue(entry)) {
+      if ((entry.attempts ?? 0) >= 8) {
+        setSyncStatus('error');
+        setSyncError(entry.lastError || 'Could not sync after multiple attempts.');
+      }
+      return;
+    }
+
+    setSyncStatus('syncing');
+    markQueueAttempt(entry, entry.lastError);
+
+    try {
+      const result = await saveCloudState(entry.state, entry.expectedUpdatedAt);
+      cloudUpdatedAtRef.current = result.updatedAt;
+      writeCloudSyncMeta({ updatedAt: result.updatedAt });
+      clearSyncQueue();
+      setHasPendingSync(false);
+      setSyncStatus('saved');
+      setSyncError(null);
       setConflictInfo(null);
     } catch (err) {
       if (err.status === 409 && err.body?.state) {
+        clearSyncQueue();
+        setHasPendingSync(false);
         setSyncStatus('conflict');
         setConflictInfo({
           updatedAt: err.body.updatedAt,
@@ -90,14 +166,28 @@ export function useAppState() {
         return;
       }
 
-      setSyncStatus('error');
-      setSyncError(err.body?.error || err.message || 'Cloud sync failed');
+      const message = err.body?.error || err.message || 'Cloud sync failed';
+      if (isRetryableSyncError(err)) {
+        queueCloudSave({
+          state: entry.state,
+          expectedUpdatedAt: entry.expectedUpdatedAt,
+          errorMessage: message,
+        });
+        setHasPendingSync(true);
+        setSyncStatus('pending');
+        setSyncError('Offline — changes saved locally and will retry automatically.');
+      } else {
+        clearSyncQueue();
+        setHasPendingSync(false);
+        setSyncStatus('error');
+        setSyncError(message);
+      }
     }
-  }, [auth.status]);
+  }, [auth]);
 
   const scheduleCloudSave = useCallback(
     (nextState) => {
-      if (auth.status !== 'authed') return;
+      if (auth.status !== 'authed' || !canEditTeamData(auth)) return;
       if (skipCloudSaveRef.current) return;
 
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -187,6 +277,33 @@ export function useAppState() {
   }, [auth.status, auth.team?.id, hydrateFromCloud]);
 
   useEffect(() => {
+    if (auth.status !== 'authed') return undefined;
+
+    const onOnline = () => {
+      flushPendingSync();
+    };
+    const onFocus = () => {
+      refreshSession();
+      flushPendingSync();
+    };
+
+    window.addEventListener('online', onOnline);
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(() => {
+      refreshSession();
+      flushPendingSync();
+    }, SESSION_REFRESH_MS);
+
+    flushPendingSync();
+
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
+  }, [auth.status, flushPendingSync, refreshSession]);
+
+  useEffect(() => {
     saveLocalState(state);
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -211,8 +328,13 @@ export function useAppState() {
   }, [conflictInfo]);
 
   const retryCloudSync = useCallback(() => {
+    const entry = readSyncQueue();
+    if (entry?.state) {
+      flushPendingSync();
+      return;
+    }
     pushCloudState(stateRef.current, { force: false });
-  }, [pushCloudState]);
+  }, [pushCloudState, flushPendingSync]);
 
   const activePlayer = useMemo(
     () => state.players.find((p) => p.id === state.activePlayerId) ?? null,
@@ -263,6 +385,7 @@ export function useAppState() {
   }, [updateMeta]);
 
   const addPlayer = useCallback(({ firstName, lastName, jerseyNumber, team, position, season }) => {
+    if (!canEditTeamData(auth)) return null;
     const ts = nowIso();
     const trimmedFirst = (firstName || '').trim();
     if (!trimmedFirst) return null;
@@ -296,9 +419,10 @@ export function useAppState() {
     }));
 
     return player;
-  }, []);
+  }, [auth]);
 
   const addGame = useCallback((payload) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => {
       if (!prev.activePlayerId) return prev;
       const ts = nowIso();
@@ -313,9 +437,10 @@ export function useAppState() {
       maybeAutoBackup(next);
       return next;
     });
-  }, []);
+  }, [auth]);
 
   const updateGame = useCallback((gameId, payload) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => {
       if (!prev.activePlayerId) return prev;
       const ts = nowIso();
@@ -330,9 +455,10 @@ export function useAppState() {
       maybeAutoBackup(next);
       return next;
     });
-  }, []);
+  }, [auth]);
 
   const deleteGame = useCallback((gameId) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => {
       const next = {
         ...prev,
@@ -343,22 +469,24 @@ export function useAppState() {
       maybeAutoBackup(next);
       return next;
     });
-  }, []);
+  }, [auth]);
 
   const updateGameUrl = useCallback((gameId, url) => {
     updateGame(gameId, { videoUrl: url });
   }, [updateGame]);
 
   const updateBenchmarkTargets = useCallback((playerId, targets) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => ({
       ...prev,
       benchmarkSets: prev.benchmarkSets.map((b) =>
         b.playerId === playerId ? { ...b, targets } : b
       ),
     }));
-  }, []);
+  }, [auth]);
 
   const updatePlayer = useCallback((playerId, updates) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => {
       const trimmedFirst = (updates.firstName || '').trim();
       const existing = prev.players.find((p) => p.id === playerId);
@@ -398,18 +526,20 @@ export function useAppState() {
         ),
       };
     });
-  }, []);
+  }, [auth]);
 
   const updatePlayerFocus = useCallback((playerId, playerFocus) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => ({
       ...prev,
       players: prev.players.map((p) =>
         p.id === playerId ? { ...p, playerFocus, updatedAt: nowIso() } : p
       ),
     }));
-  }, []);
+  }, [auth]);
 
   const markClipReviewed = useCallback((playerId, clipId, note) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => ({
       ...prev,
       players: prev.players.map((p) => {
@@ -424,9 +554,10 @@ export function useAppState() {
         };
       }),
     }));
-  }, []);
+  }, [auth]);
 
   const toggleStarredClip = useCallback((gameId, clipId) => {
+    if (!canEditTeamData(auth)) return;
     setState((prev) => {
       const next = {
         ...prev,
@@ -441,9 +572,12 @@ export function useAppState() {
       maybeAutoBackup(next);
       return next;
     });
-  }, []);
+  }, [auth]);
 
   const importAppState = useCallback((raw, mode) => {
+    if (!canEditTeamData(auth)) {
+      return { success: false, errors: ['View-only members cannot import data.'] };
+    }
     const { valid, errors, data } = validateImportData(raw);
     if (!valid) {
       return { success: false, errors };
@@ -463,7 +597,7 @@ export function useAppState() {
     });
 
     return { success: true, errors: [] };
-  }, []);
+  }, [auth]);
 
   return {
     state,
@@ -471,9 +605,12 @@ export function useAppState() {
     activePlayerGames,
     activeBenchmarkSet,
     auth,
+    canEdit,
     syncStatus,
     syncError,
     conflictInfo,
+    hasPendingSync,
+    refreshSession,
     signup,
     login,
     logout,

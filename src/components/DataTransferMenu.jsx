@@ -5,7 +5,7 @@ import {
   validateImportData,
 } from '../utils/importExport';
 
-export default function DataTransferMenu({ meta, onExport, onImport, onUpdateMeta }) {
+export default function DataTransferMenu({ meta, onExport, onImport, onUpdateMeta, canEdit = true }) {
   const fileRef = useRef(null);
   const [pendingImport, setPendingImport] = useState(null);
   const [importError, setImportError] = useState(null);
@@ -63,23 +63,27 @@ export default function DataTransferMenu({ meta, onExport, onImport, onUpdateMet
         >
           Export
         </button>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-2 rounded-md font-semibold whitespace-nowrap"
-          title="Import a JSON backup from another device"
-        >
-          Import
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowSettings((v) => !v)}
-          className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-2 py-2 rounded-md font-semibold"
-          title="Backup settings"
-          aria-label="Backup settings"
-        >
-          ⚙
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-2 rounded-md font-semibold whitespace-nowrap"
+            title="Import a JSON backup from another device"
+          >
+            Import
+          </button>
+        )}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setShowSettings((v) => !v)}
+            className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-2 py-2 rounded-md font-semibold"
+            title="Backup settings"
+            aria-label="Backup settings"
+          >
+            ⚙
+          </button>
+        )}
         <input
           ref={fileRef}
           type="file"

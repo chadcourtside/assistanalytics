@@ -13,12 +13,11 @@ function getSessionSecret(env) {
   return env.SESSION_SECRET || 'dev-only-change-me-in-production';
 }
 
-export async function createSessionToken(userId, teamId, role, env) {
+export async function createSessionToken(userId, teamId, env) {
   return signPayload(
     {
       userId,
       teamId,
-      role,
       exp: sessionExpiryMs(),
     },
     getSessionSecret(env)
@@ -156,9 +155,11 @@ export async function createTeamForUser(env, userId, name) {
   };
 }
 
-export async function joinTeam(env, userId, inviteCode) {
+export async function joinTeam(env, userId, inviteCode, requestedRole = 'coach') {
   const code = (inviteCode || '').trim().toUpperCase();
   if (!code) return { error: 'Invite code is required' };
+
+  const joinRole = requestedRole === 'viewer' ? 'viewer' : 'coach';
 
   const team = await env.DB.prepare('SELECT id, name, invite_code FROM teams WHERE invite_code = ?')
     .bind(code)
@@ -184,14 +185,14 @@ export async function joinTeam(env, userId, inviteCode) {
   await env.DB.prepare(
     'INSERT INTO memberships (user_id, team_id, role, joined_at) VALUES (?, ?, ?, ?)'
   )
-    .bind(userId, team.id, 'coach', joinedAt)
+    .bind(userId, team.id, joinRole, joinedAt)
     .run();
 
   return {
     id: team.id,
     name: team.name,
     inviteCode: team.invite_code,
-    role: 'coach',
+    role: joinRole,
   };
 }
 
@@ -200,7 +201,7 @@ export function authResponse(request, env, { user, team }) {
     return { body: { user, team: null }, cookie: null };
   }
 
-  return createSessionToken(user.id, team.id, team.role, env).then((token) => ({
+  return createSessionToken(user.id, team.id, env).then((token) => ({
     body: {
       user,
       team: {

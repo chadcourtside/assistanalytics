@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function AddPlayerForm({ onAdd }) {
+export default function AddPlayerForm({ onAdd, canEdit = true }) {
   const [open, setOpen] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -26,6 +26,8 @@ export default function AddPlayerForm({ onAdd }) {
       setOpen(false);
     }
   };
+
+  if (!canEdit) return null;
 
   if (!open) {
     return (

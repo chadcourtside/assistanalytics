@@ -3,6 +3,7 @@ export default function SyncStatus({
   syncStatus,
   syncError,
   conflictInfo,
+  hasPendingSync,
   onAcceptCloud,
   onRetry,
   onLogout,
@@ -22,6 +23,7 @@ export default function SyncStatus({
     idle: { label: 'Cloud connected', dot: 'bg-slate-400' },
     syncing: { label: 'Syncing…', dot: 'bg-yellow-400 animate-pulse' },
     saved: { label: 'Saved to cloud', dot: 'bg-green-400' },
+    pending: { label: hasPendingSync ? 'Pending sync…' : 'Pending sync…', dot: 'bg-amber-400 animate-pulse' },
     error: { label: syncError || 'Sync error', dot: 'bg-red-400' },
     conflict: { label: 'Sync conflict', dot: 'bg-orange-400' },
     offline: { label: syncError || 'Offline cache', dot: 'bg-amber-400' },
@@ -63,6 +65,16 @@ export default function SyncStatus({
           className="text-[11px] text-red-200 hover:text-white underline"
         >
           Retry sync
+        </button>
+      )}
+
+      {syncStatus === 'pending' && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="text-[11px] text-amber-200 hover:text-white underline"
+        >
+          Retry now
         </button>
       )}
     </div>

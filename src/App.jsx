@@ -32,9 +32,12 @@ export default function App() {
     activePlayerGames,
     activeBenchmarkSet,
     auth,
+    canEdit,
     syncStatus,
     syncError,
     conflictInfo,
+    hasPendingSync,
+    refreshSession,
     signup,
     login,
     logout,
@@ -143,6 +146,7 @@ export default function App() {
               syncStatus={syncStatus}
               syncError={syncError}
               conflictInfo={conflictInfo}
+              hasPendingSync={hasPendingSync}
               onAcceptCloud={acceptCloudConflict}
               onRetry={retryCloudSync}
               onLogout={logout}
@@ -162,7 +166,7 @@ export default function App() {
               activePlayerId={state.activePlayerId}
               onSelect={setActivePlayerId}
             />
-            {activePlayer && (
+            {activePlayer && canEdit && (
               <button
                 type="button"
                 onClick={() => openEditPlayer(activePlayer)}
@@ -177,9 +181,10 @@ export default function App() {
               onExport={recordExport}
               onImport={importAppState}
               onUpdateMeta={updateMeta}
+              canEdit={canEdit}
             />
             <StatGlossaryButton />
-            <AddPlayerForm onAdd={addPlayer} />
+            <AddPlayerForm onAdd={addPlayer} canEdit={canEdit} />
             </div>
           </div>
         </div>
@@ -229,6 +234,7 @@ export default function App() {
                 onSelectPlayer={setActivePlayerId}
                 onEditPlayer={openEditPlayer}
                 onNavigate={navigateToPlayerTab}
+                canEdit={canEdit}
               />
             )}
             {activeTab === 'Player' && activePlayer && (
@@ -236,8 +242,8 @@ export default function App() {
                 player={activePlayer}
                 games={scopedPlayerGames}
                 benchmarkSet={activeBenchmarkSet}
-                onSavePlayerFocus={(focus) => updatePlayerFocus(activePlayer.id, focus)}
-                onMarkClipReviewed={(clipId) => markClipReviewed(activePlayer.id, clipId)}
+                onSavePlayerFocus={canEdit ? (focus) => updatePlayerFocus(activePlayer.id, focus) : undefined}
+                onMarkClipReviewed={canEdit ? (clipId) => markClipReviewed(activePlayer.id, clipId) : undefined}
                 onOpenFilm={openFilmForGame}
               />
             )}
@@ -266,6 +272,7 @@ export default function App() {
                 deleteGame={deleteGame}
                 updateGameUrl={updateGameUrl}
                 onOpenFilmClip={openFilmForClip}
+                canEdit={canEdit}
               />
             )}
             {activeTab === 'Game Logs' && !activePlayer && (
@@ -280,6 +287,7 @@ export default function App() {
                 onGameScopeChange={setGameScope}
                 benchmarkSet={activeBenchmarkSet}
                 onSaveTargets={updateBenchmarkTargets}
+                canEdit={canEdit}
               />
             )}
             {activeTab === 'Benchmarks' && !activePlayer && (
@@ -293,7 +301,7 @@ export default function App() {
                 onGameScopeChange={setGameScope}
                 initialGameId={filmGameId}
                 initialClipId={filmClipId}
-                onToggleStarredClip={toggleStarredClip}
+                onToggleStarredClip={canEdit ? toggleStarredClip : undefined}
               />
             )}
             {activeTab === 'Smart Film Room' && !activePlayer && (
@@ -313,7 +321,11 @@ export default function App() {
       )}
 
       {teamSettingsOpen && auth.status === 'authed' && (
-        <TeamSettingsModal auth={auth} onClose={() => setTeamSettingsOpen(false)} />
+        <TeamSettingsModal
+          auth={auth}
+          onClose={() => setTeamSettingsOpen(false)}
+          onMembershipChanged={refreshSession}
+        />
       )}
     </div>
   );

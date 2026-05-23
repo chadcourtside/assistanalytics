@@ -85,6 +85,42 @@ export async function updateMemberRole(env, { teamId, actorUserId, targetUserId,
   };
 }
 
+export async function removeTeamMember(env, { teamId, actorUserId, targetUserId }) {
+  const actor = await env.DB.prepare(
+    'SELECT role FROM memberships WHERE user_id = ? AND team_id = ?'
+  )
+    .bind(actorUserId, teamId)
+    .first();
+
+  if (!actor || actor.role !== 'owner') {
+    return { error: 'Only the team owner can remove members', status: 403 };
+  }
+
+  if (targetUserId === actorUserId) {
+    return { error: 'You cannot remove yourself from the team' };
+  }
+
+  const target = await env.DB.prepare(
+    'SELECT role FROM memberships WHERE user_id = ? AND team_id = ?'
+  )
+    .bind(targetUserId, teamId)
+    .first();
+
+  if (!target) {
+    return { error: 'Member not found on this team', status: 404 };
+  }
+
+  if (target.role === 'owner') {
+    return { error: 'The team owner cannot be removed' };
+  }
+
+  await env.DB.prepare('DELETE FROM memberships WHERE user_id = ? AND team_id = ?')
+    .bind(targetUserId, teamId)
+    .run();
+
+  return { ok: true };
+}
+
 export const ROLE_ACCESS = {
   owner: {
     label: 'Owner',

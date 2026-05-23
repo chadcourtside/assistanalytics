@@ -7,15 +7,22 @@ import {
   formatJoinedDate,
 } from '../utils/teamSettings';
 
-export default function TeamSettingsModal({ auth, onClose }) {
+export default function TeamSettingsModal({ auth, onClose, onMembershipChanged }) {
   const isOwner = auth.team?.role === 'owner';
-  const { members, loading, error, updateMemberRole } = useTeamMembers(Boolean(auth.team?.id));
+  const { members, loading, error, updateMemberRole, removeMember } = useTeamMembers(
+    Boolean(auth.team?.id)
+  );
   const [copyMessage, setCopyMessage] = useState('');
-  const [roleError, setRoleError] = useState(null);
+  const [actionError, setActionError] = useState(null);
   const [savingUserId, setSavingUserId] = useState(null);
+  const [removingUserId, setRemovingUserId] = useState(null);
 
-  const inviteUrl = useMemo(
-    () => buildInviteUrl(auth.team?.inviteCode),
+  const coachInviteUrl = useMemo(
+    () => buildInviteUrl(auth.team?.inviteCode, 'coach'),
+    [auth.team?.inviteCode]
+  );
+  const parentInviteUrl = useMemo(
+    () => buildInviteUrl(auth.team?.inviteCode, 'viewer'),
     [auth.team?.inviteCode]
   );
 
@@ -28,11 +35,30 @@ export default function TeamSettingsModal({ auth, onClose }) {
   };
 
   const handleRoleChange = async (userId, role) => {
-    setRoleError(null);
+    setActionError(null);
     setSavingUserId(userId);
     const result = await updateMemberRole(userId, role);
-    if (!result.success) setRoleError(result.error);
+    if (!result.success) {
+      setActionError(result.error);
+    } else if (userId === auth.user?.id) {
+      onMembershipChanged?.();
+    }
     setSavingUserId(null);
+  };
+
+  const handleRemove = async (member) => {
+    const confirmed = window.confirm(
+      `Remove ${member.email} from ${auth.team?.name}? They will lose access to this team's roster.`
+    );
+    if (!confirmed) return;
+
+    setActionError(null);
+    setRemovingUserId(member.userId);
+    const result = await removeMember(member.userId);
+    if (!result.success) {
+      setActionError(result.error);
+    }
+    setRemovingUserId(null);
   };
 
   return (
@@ -67,36 +93,50 @@ export default function TeamSettingsModal({ auth, onClose }) {
               <h3 className="text-sm font-bold uppercase tracking-wide text-gray-500 mb-2">
                 Invite coaches &amp; parents
               </h3>
-              <div className="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <div className="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-4">
                 <div>
                   <div className="text-xs font-semibold text-gray-500 mb-1">Invite code</div>
                   <div className="font-mono text-lg font-bold tracking-widest text-gray-900">
                     {auth.team.inviteCode}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(auth.team.inviteCode, 'Invite code')}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Copy code
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(inviteUrl, 'Invite link')}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-md border border-blue-200 text-blue-700 hover:bg-blue-50"
-                  >
-                    Copy invite link
-                  </button>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-md border border-blue-100 bg-white p-3">
+                    <div className="text-xs font-bold uppercase text-blue-800 mb-2">Coach link</div>
+                    <p className="text-xs text-gray-500 mb-2">Can log games and edit stats.</p>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(coachInviteUrl, 'Coach invite link')}
+                      className="w-full px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      Copy coach link
+                    </button>
+                  </div>
+                  <div className="rounded-md border border-violet-100 bg-white p-3">
+                    <div className="text-xs font-bold uppercase text-violet-800 mb-2">Parent link</div>
+                    <p className="text-xs text-gray-500 mb-2">Read-only viewer access.</p>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(parentInviteUrl, 'Parent invite link')}
+                      className="w-full px-3 py-1.5 text-xs font-semibold rounded-md border border-violet-300 text-violet-800 hover:bg-violet-50"
+                    >
+                      Copy parent link
+                    </button>
+                  </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopy(auth.team.inviteCode, 'Invite code')}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  Copy code only
+                </button>
+
                 {copyMessage && (
                   <p className="text-xs text-green-700 font-medium">{copyMessage}</p>
                 )}
-                <p className="text-xs text-gray-500">
-                  New members join as <strong>Coach</strong> by default. Change a parent to{' '}
-                  <strong>Viewer</strong> below for read-only access.
-                </p>
               </div>
             </section>
           )}
@@ -120,9 +160,9 @@ export default function TeamSettingsModal({ auth, onClose }) {
               Team members
             </h3>
 
-            {(error || roleError) && (
+            {(error || actionError) && (
               <div className="mb-3 p-3 rounded-md bg-red-50 text-red-800 text-sm">
-                {roleError || error}
+                {actionError || error}
               </div>
             )}
 
@@ -137,12 +177,14 @@ export default function TeamSettingsModal({ auth, onClose }) {
                       <th className="px-3 py-2 font-semibold">Role</th>
                       <th className="px-3 py-2 font-semibold">Joined</th>
                       <th className="px-3 py-2 font-semibold">Access</th>
+                      {isOwner && <th className="px-3 py-2 font-semibold">Actions</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {members.map((member) => {
                       const isSelf = member.userId === auth.user?.id;
                       const canEditRole = isOwner && member.role !== 'owner' && !isSelf;
+                      const canRemove = isOwner && member.role !== 'owner' && !isSelf;
 
                       return (
                         <tr key={member.userId} className={isSelf ? 'bg-blue-50/40' : undefined}>
@@ -177,6 +219,22 @@ export default function TeamSettingsModal({ auth, onClose }) {
                           <td className="px-3 py-2 text-gray-600">
                             {TEAM_ROLE_META[member.role]?.summary || '—'}
                           </td>
+                          {isOwner && (
+                            <td className="px-3 py-2">
+                              {canRemove ? (
+                                <button
+                                  type="button"
+                                  disabled={removingUserId === member.userId}
+                                  onClick={() => handleRemove(member)}
+                                  className="text-xs font-semibold text-red-700 hover:text-red-900 disabled:opacity-50"
+                                >
+                                  Remove
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

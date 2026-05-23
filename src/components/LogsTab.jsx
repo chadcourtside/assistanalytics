@@ -14,6 +14,7 @@ export default function LogsTab({
   deleteGame,
   updateGameUrl,
   onOpenFilmClip,
+  canEdit = true,
 }) {
   const [modalMode, setModalMode] = useState(null);
   const [editingGame, setEditingGame] = useState(null);
@@ -67,7 +68,7 @@ export default function LogsTab({
           <p className="text-sm text-gray-500">{player.displayName}</p>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
-          {games.length > 0 && (
+          {canEdit && games.length > 0 && (
             <button
               type="button"
               onClick={() => openDuplicate(games[0])}
@@ -77,27 +78,33 @@ export default function LogsTab({
               Duplicate last
             </button>
           )}
-          <button
-            type="button"
-            onClick={openAdd}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold shrink-0"
-          >
-            + Add Game
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={openAdd}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold shrink-0"
+            >
+              + Add Game
+            </button>
+          )}
         </div>
       </div>
 
       {games.length === 0 ? (
         <div className="text-center py-12 text-gray-500 bg-white rounded-lg border border-gray-200">
           <p className="text-lg font-medium">No games logged for {player.displayName} yet.</p>
-          <p className="text-sm mt-2 mb-4">Add a game to track stats and play-by-play.</p>
-          <button
-            type="button"
-            onClick={openAdd}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold"
-          >
-            + Add First Game
-          </button>
+          <p className="text-sm mt-2 mb-4">
+            {canEdit ? 'Add a game to track stats and play-by-play.' : 'No games logged yet for this player.'}
+          </p>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={openAdd}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold"
+            >
+              + Add First Game
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -137,42 +144,52 @@ export default function LogsTab({
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2 no-print">
-                    <button
-                      type="button"
-                      onClick={() => openDuplicate(g)}
-                      className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 font-medium text-gray-700"
-                    >
-                      Duplicate
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openEdit(g)}
-                      className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 font-medium text-gray-700"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(g)}
-                      className="text-sm px-3 py-1.5 rounded-md border border-red-200 hover:bg-red-50 font-medium text-red-700"
-                    >
-                      Delete
-                    </button>
+                  {canEdit && (
+                    <div className="flex flex-wrap gap-2 no-print">
+                      <button
+                        type="button"
+                        onClick={() => openDuplicate(g)}
+                        className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 font-medium text-gray-700"
+                      >
+                        Duplicate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(g)}
+                        className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50 font-medium text-gray-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(g)}
+                        className="text-sm px-3 py-1.5 rounded-md border border-red-200 hover:bg-red-50 font-medium text-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {canEdit ? (
+                  <div className="mb-4 no-print">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                      YouTube Link
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Paste YouTube Link here..."
+                      value={g.videoUrl || ''}
+                      onChange={(e) => updateGameUrl(g.id, e.target.value)}
+                      className="w-full md:w-96 text-sm px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none"
+                    />
                   </div>
-                </div>
-                <div className="mb-4 no-print">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-                    YouTube Link
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Paste YouTube Link here..."
-                    value={g.videoUrl || ''}
-                    onChange={(e) => updateGameUrl(g.id, e.target.value)}
-                    className="w-full md:w-96 text-sm px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none"
-                  />
-                </div>
+                ) : (
+                  g.videoUrl && (
+                    <p className="mb-4 text-sm text-gray-600 no-print">
+                      YouTube: {g.videoUrl}
+                    </p>
+                  )
+                )}
                 <div className="text-sm font-mono bg-slate-50 p-4 rounded-md border border-slate-100 h-64 overflow-y-auto">
                   <PlayByPlayList game={g} onOpenFilmClip={onOpenFilmClip} />
                 </div>

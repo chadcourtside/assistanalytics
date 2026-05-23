@@ -24,7 +24,7 @@ function BenchmarkPill({ onTrack, total }) {
   );
 }
 
-function PlayerRow({ player, summary, isActive, onSelect, onEdit, onViewDashboard, onViewPlayer, onAddGame }) {
+function PlayerRow({ player, summary, isActive, onSelect, onEdit, onViewDashboard, onViewPlayer, onAddGame, canEdit }) {
   return (
     <tr className={`border-b ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
       <td className="px-4 py-3">
@@ -77,20 +77,24 @@ function PlayerRow({ player, summary, isActive, onSelect, onEdit, onViewDashboar
           >
             Dashboard
           </button>
-          <button
-            type="button"
-            onClick={() => onAddGame(player.id)}
-            className="text-xs border border-gray-300 hover:bg-gray-50 text-gray-700 px-2 py-1 rounded font-semibold"
-          >
-            Add Game
-          </button>
-          <button
-            type="button"
-            onClick={() => onEdit(player)}
-            className="text-xs text-gray-500 hover:text-gray-800 px-2 py-1 font-semibold"
-          >
-            Edit
-          </button>
+          {canEdit && (
+            <>
+              <button
+                type="button"
+                onClick={() => onAddGame(player.id)}
+                className="text-xs border border-gray-300 hover:bg-gray-50 text-gray-700 px-2 py-1 rounded font-semibold"
+              >
+                Add Game
+              </button>
+              <button
+                type="button"
+                onClick={() => onEdit(player)}
+                className="text-xs text-gray-500 hover:text-gray-800 px-2 py-1 font-semibold"
+              >
+                Edit
+              </button>
+            </>
+          )}
         </div>
       </td>
     </tr>
@@ -105,6 +109,7 @@ export default function RosterTab({
   onSelectPlayer,
   onEditPlayer,
   onNavigate,
+  canEdit = true,
 }) {
   const [teamFilter, setTeamFilter] = useState('all');
 
@@ -207,6 +212,7 @@ export default function RosterTab({
                     onViewDashboard={(id) => onNavigate('Dashboard', id)}
                     onViewPlayer={(id) => onNavigate('Player', id)}
                     onAddGame={(id) => onNavigate('Game Logs', id)}
+                    canEdit={canEdit}
                   />
                 ))}
               </tbody>

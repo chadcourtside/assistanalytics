@@ -24,11 +24,20 @@ export function formatJoinedDate(iso) {
   });
 }
 
-export function buildInviteUrl(inviteCode) {
+export function buildInviteUrl(inviteCode, role = 'coach') {
   if (!inviteCode || typeof window === 'undefined') return '';
   const url = new URL(window.location.origin);
   url.searchParams.set('join', inviteCode);
+  if (role === 'viewer') {
+    url.searchParams.set('role', 'viewer');
+  }
   return url.toString();
+}
+
+export function readJoinRoleFromUrl() {
+  if (typeof window === 'undefined') return 'coach';
+  const role = (new URLSearchParams(window.location.search).get('role') || '').toLowerCase();
+  return role === 'viewer' ? 'viewer' : 'coach';
 }
 
 export async function copyText(text) {

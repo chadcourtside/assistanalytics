@@ -56,10 +56,10 @@ export async function createTeam({ name }) {
   });
 }
 
-export async function joinTeam({ inviteCode }) {
+export async function joinTeam({ inviteCode, role }) {
   return apiFetch('/teams/join', {
     method: 'POST',
-    body: JSON.stringify({ inviteCode }),
+    body: JSON.stringify({ inviteCode, role }),
   });
 }
 
@@ -71,6 +71,13 @@ export async function updateMemberRole({ userId, role }) {
   return apiFetch('/teams/members', {
     method: 'PATCH',
     body: JSON.stringify({ userId, role }),
+  });
+}
+
+export async function removeTeamMember({ userId }) {
+  return apiFetch('/teams/members', {
+    method: 'DELETE',
+    body: JSON.stringify({ userId }),
   });
 }
 

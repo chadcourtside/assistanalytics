@@ -8,6 +8,12 @@ function readJoinCodeFromUrl() {
   return (new URLSearchParams(window.location.search).get('join') || '').trim().toUpperCase();
 }
 
+function readJoinRoleFromUrl() {
+  if (typeof window === 'undefined') return 'coach';
+  const role = (new URLSearchParams(window.location.search).get('role') || '').toLowerCase();
+  return role === 'viewer' ? 'viewer' : 'coach';
+}
+
 export default function AuthGate({
   auth,
   onSignup,
@@ -21,12 +27,15 @@ export default function AuthGate({
   const [password, setPassword] = useState('');
   const [teamName, setTeamName] = useState('');
   const [inviteCode, setInviteCode] = useState(() => readJoinCodeFromUrl());
+  const [joinRole, setJoinRole] = useState(() => readJoinRoleFromUrl());
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
 
   useEffect(() => {
     const code = readJoinCodeFromUrl();
+    const role = readJoinRoleFromUrl();
     if (code) setInviteCode(code);
+    if (role) setJoinRole(role);
   }, []);
 
   const needsTeam = auth.status === 'needs_team';
@@ -63,7 +72,7 @@ export default function AuthGate({
     e.preventDefault();
     setSubmitting(true);
     setFormError(null);
-    const result = await onJoinTeam({ inviteCode });
+    const result = await onJoinTeam({ inviteCode, role: joinRole });
     if (!result.success) setFormError(result.error);
     setSubmitting(false);
   };
@@ -119,6 +128,29 @@ export default function AuthGate({
               className={inputClass}
               required
             />
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold text-gray-500">Join as</legend>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="joinRole"
+                  value="coach"
+                  checked={joinRole === 'coach'}
+                  onChange={() => setJoinRole('coach')}
+                />
+                Coach — can log games and edit stats
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="radio"
+                  name="joinRole"
+                  value="viewer"
+                  checked={joinRole === 'viewer'}
+                  onChange={() => setJoinRole('viewer')}
+                />
+                Parent / viewer — read-only access
+              </label>
+            </fieldset>
             <button
               type="submit"
               disabled={submitting}
@@ -141,7 +173,7 @@ export default function AuthGate({
           {inviteCode && (
             <span className="block mt-2 text-blue-700">
               Invite code <span className="font-mono font-bold">{inviteCode}</span> will be used after
-              you log in.
+              you log in{joinRole === 'viewer' ? ' as a parent/viewer' : ''}.
             </span>
           )}
         </p>

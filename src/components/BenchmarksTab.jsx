@@ -61,6 +61,7 @@ export default function BenchmarksTab({
   onGameScopeChange,
   benchmarkSet,
   onSaveTargets,
+  canEdit = true,
 }) {
   const [editing, setEditing] = useState(false);
   const [draftTargets, setDraftTargets] = useState([]);
@@ -115,7 +116,7 @@ export default function BenchmarksTab({
           </div>
         </div>
         <div className="flex gap-2 no-print">
-          {editing ? (
+          {canEdit && (editing ? (
             <>
               <button type="button" onClick={cancelEditing} className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-md font-semibold">
                 Cancel
@@ -128,7 +129,7 @@ export default function BenchmarksTab({
             <button type="button" onClick={startEditing} className="text-sm border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-md font-semibold">
               Edit Targets
             </button>
-          )}
+          ))}
         </div>
       </div>
       {gameScope && onGameScopeChange && (

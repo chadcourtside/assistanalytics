@@ -18,7 +18,7 @@ import {
   readJson,
 } from '../_lib/http.js';
 import { nowIso } from '../_lib/crypto.js';
-import { listTeamMembers, updateMemberRole } from '../_lib/teams.js';
+import { listTeamMembers, removeTeamMember, updateMemberRole } from '../_lib/teams.js';
 
 function routeKey(method, segments) {
   return `${method}:${segments.join('/')}`;
@@ -89,12 +89,7 @@ async function handleTeamsCreate(request, env) {
   const team = await createTeamForUser(env, auth.session.userId, body?.name);
   if (team.error) return errorResponse(team.error, 400);
 
-  const token = await createSessionToken(
-    auth.session.userId,
-    team.id,
-    team.role,
-    env
-  );
+  const token = await createSessionToken(auth.session.userId, team.id, env);
 
   return jsonResponse(
     {
@@ -116,15 +111,10 @@ async function handleTeamsJoin(request, env) {
   if (auth.error) return errorResponse(auth.error, auth.status);
 
   const body = await readJson(request);
-  const team = await joinTeam(env, auth.session.userId, body?.inviteCode);
+  const team = await joinTeam(env, auth.session.userId, body?.inviteCode, body?.role);
   if (team.error) return errorResponse(team.error, 400);
 
-  const token = await createSessionToken(
-    auth.session.userId,
-    team.id,
-    team.role,
-    env
-  );
+  const token = await createSessionToken(auth.session.userId, team.id, env);
 
   return jsonResponse(
     {
@@ -280,6 +270,24 @@ async function handleTeamsMembersPatch(request, env) {
   return jsonResponse({ member: result.member });
 }
 
+async function handleTeamsMembersDelete(request, env) {
+  const auth = await requireSession(request, env);
+  if (auth.error) return errorResponse(auth.error, auth.status);
+
+  const body = await readJson(request);
+  const result = await removeTeamMember(env, {
+    teamId: auth.session.teamId,
+    actorUserId: auth.session.userId,
+    targetUserId: body?.userId,
+  });
+
+  if (result.error) {
+    return errorResponse(result.error, result.status || 400);
+  }
+
+  return jsonResponse({ ok: true });
+}
+
 const ROUTES = {
   'POST:auth/signup': handleAuthSignup,
   'POST:auth/login': handleAuthLogin,
@@ -289,6 +297,7 @@ const ROUTES = {
   'POST:teams/join': handleTeamsJoin,
   'GET:teams/members': handleTeamsMembersGet,
   'PATCH:teams/members': handleTeamsMembersPatch,
+  'DELETE:teams/members': handleTeamsMembersDelete,
   'GET:state': handleStateGet,
   'PUT:state': handleStatePut,
 };
