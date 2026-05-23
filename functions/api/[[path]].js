@@ -18,6 +18,7 @@ import {
   readJson,
 } from '../_lib/http.js';
 import { nowIso } from '../_lib/crypto.js';
+import { listTeamMembers, updateMemberRole } from '../_lib/teams.js';
 
 function routeKey(method, segments) {
   return `${method}:${segments.join('/')}`;
@@ -252,6 +253,33 @@ async function handleStatePut(request, env) {
   return jsonResponse({ ok: true, updatedAt });
 }
 
+async function handleTeamsMembersGet(request, env) {
+  const auth = await requireSession(request, env);
+  if (auth.error) return errorResponse(auth.error, auth.status);
+
+  const members = await listTeamMembers(env, auth.session.teamId);
+  return jsonResponse({ members });
+}
+
+async function handleTeamsMembersPatch(request, env) {
+  const auth = await requireSession(request, env);
+  if (auth.error) return errorResponse(auth.error, auth.status);
+
+  const body = await readJson(request);
+  const result = await updateMemberRole(env, {
+    teamId: auth.session.teamId,
+    actorUserId: auth.session.userId,
+    targetUserId: body?.userId,
+    role: body?.role,
+  });
+
+  if (result.error) {
+    return errorResponse(result.error, result.status || 400);
+  }
+
+  return jsonResponse({ member: result.member });
+}
+
 const ROUTES = {
   'POST:auth/signup': handleAuthSignup,
   'POST:auth/login': handleAuthLogin,
@@ -259,6 +287,8 @@ const ROUTES = {
   'GET:auth/me': handleAuthMe,
   'POST:teams/create': handleTeamsCreate,
   'POST:teams/join': handleTeamsJoin,
+  'GET:teams/members': handleTeamsMembersGet,
+  'PATCH:teams/members': handleTeamsMembersPatch,
   'GET:state': handleStateGet,
   'PUT:state': handleStatePut,
 };

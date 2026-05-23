@@ -63,6 +63,17 @@ export async function joinTeam({ inviteCode }) {
   });
 }
 
+export async function fetchTeamMembers() {
+  return apiFetch('/teams/members');
+}
+
+export async function updateMemberRole({ userId, role }) {
+  return apiFetch('/teams/members', {
+    method: 'PATCH',
+    body: JSON.stringify({ userId, role }),
+  });
+}
+
 export async function fetchCloudState() {
   return apiFetch('/state');
 }

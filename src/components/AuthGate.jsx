@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
+
+function readJoinCodeFromUrl() {
+  if (typeof window === 'undefined') return '';
+  return (new URLSearchParams(window.location.search).get('join') || '').trim().toUpperCase();
+}
 
 export default function AuthGate({
   auth,
@@ -15,9 +20,14 @@ export default function AuthGate({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [teamName, setTeamName] = useState('');
-  const [inviteCode, setInviteCode] = useState('');
+  const [inviteCode, setInviteCode] = useState(() => readJoinCodeFromUrl());
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+
+  useEffect(() => {
+    const code = readJoinCodeFromUrl();
+    if (code) setInviteCode(code);
+  }, []);
 
   const needsTeam = auth.status === 'needs_team';
   const displayError = formError || auth.error;
@@ -128,6 +138,12 @@ export default function AuthGate({
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Assist Analytics</h1>
         <p className="text-sm text-gray-500 mb-6">
           Sign in to sync roster data across devices with your coaching staff.
+          {inviteCode && (
+            <span className="block mt-2 text-blue-700">
+              Invite code <span className="font-mono font-bold">{inviteCode}</span> will be used after
+              you log in.
+            </span>
+          )}
         </p>
 
         <div className="flex gap-2 mb-4">

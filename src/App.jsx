@@ -14,6 +14,7 @@ import BackupReminderBanner from './components/BackupReminderBanner';
 import PlayerViewTab from './components/PlayerViewTab';
 import AuthGate from './components/AuthGate';
 import SyncStatus from './components/SyncStatus';
+import TeamSettingsModal from './components/TeamSettingsModal';
 import EditPlayerModal from './components/EditPlayerModal';
 
 const TABS = ['Roster', 'Player', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
@@ -23,6 +24,7 @@ export default function App() {
   const [filmGameId, setFilmGameId] = useState(null);
   const [filmClipId, setFilmClipId] = useState(null);
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
   const [gameScope, setGameScope] = useState({ seasonFilter: 'all', gameTypeFilter: 'all' });
   const {
     state,
@@ -146,6 +148,15 @@ export default function App() {
               onLogout={logout}
             />
             <div className="flex items-center gap-3 relative">
+            {auth.status === 'authed' && auth.team && (
+              <button
+                type="button"
+                onClick={() => setTeamSettingsOpen(true)}
+                className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-2 rounded-md font-semibold whitespace-nowrap"
+              >
+                Team
+              </button>
+            )}
             <PlayerSelector
               players={state.players}
               activePlayerId={state.activePlayerId}
@@ -299,6 +310,10 @@ export default function App() {
           onSave={handleSavePlayer}
           onClose={() => setEditingPlayer(null)}
         />
+      )}
+
+      {teamSettingsOpen && auth.status === 'authed' && (
+        <TeamSettingsModal auth={auth} onClose={() => setTeamSettingsOpen(false)} />
       )}
     </div>
   );

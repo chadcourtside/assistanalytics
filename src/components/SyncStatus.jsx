@@ -34,14 +34,6 @@ export default function SyncStatus({
       <div className="flex items-center gap-2 text-xs text-slate-300">
         <span className={`inline-block w-2 h-2 rounded-full ${current.dot}`} />
         <span title={auth.team?.name}>{current.label}</span>
-        {auth.team?.inviteCode && auth.team?.role === 'owner' && (
-          <span
-            className="text-slate-400 hidden lg:inline"
-            title="Share this invite code with coaches and parents"
-          >
-            · Invite: {auth.team.inviteCode}
-          </span>
-        )}
         <button
           type="button"
           onClick={onLogout}
