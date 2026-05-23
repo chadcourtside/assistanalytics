@@ -1,10 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
+  calcPointsFromShooting,
   formatGameTitle,
   formatGameSubtitle,
   formatGameDateDisplay,
   normalizeGameStats,
 } from './gameStats.js';
+
+describe('calcPointsFromShooting', () => {
+  it('derives pts from twos, threes, and free throws', () => {
+    expect(calcPointsFromShooting(4, 1, 2)).toBe(11);
+  });
+});
 
 describe('normalizeGameStats', () => {
   it('sums oreb and dreb into reb when reb omitted', () => {

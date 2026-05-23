@@ -1,4 +1,4 @@
-import { normalizeGameStats } from './gameStats';
+import { calcPointsFromShooting, normalizeGameStats } from './gameStats';
 import { inferPlayEventTypes, PLAY_EVENT_TYPES, parsePlayEventLine } from './playEvents';
 import { parsePlayByPlayText } from './gameForm';
 
@@ -155,10 +155,21 @@ export function compareStatsToPlayByPlay(enteredStats, playByPlay) {
     }
   }
 
+  const enteredPts = entered.pts ?? 0;
+  const countedPts = calcPointsFromShooting(counts.fgm, counts.threePm, counts.ftm);
+  if (enteredPts !== countedPts && (enteredPts > 0 || countedPts > 0)) {
+    mismatches.push({
+      key: 'pts',
+      label: 'PTS',
+      entered: enteredPts,
+      counted: countedPts,
+    });
+  }
+
   return { counts, mismatches, hasPlayByPlay: (playByPlay?.length ?? 0) > 0 };
 }
 
-/** Merge play-by-play counts into stats (does not change mins, pts, plus/minus). */
+/** Merge play-by-play counts into stats (recalculates pts; does not change mins or plus/minus). */
 export function applyPlayByPlayCountsToStats(currentStats, playByPlay) {
   const counts = countStatsFromPlayByPlay(playByPlay);
   const next = { ...normalizeGameStats(currentStats) };
@@ -172,6 +183,8 @@ export function applyPlayByPlayCountsToStats(currentStats, playByPlay) {
       next[key] = counts[key];
     }
   }
+
+  next.pts = calcPointsFromShooting(next.fgm, next.threePm, next.ftm);
 
   return normalizeGameStats(next);
 }

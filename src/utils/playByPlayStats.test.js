@@ -56,16 +56,36 @@ describe('compareStatsToPlayByPlay', () => {
     );
     expect(mismatches.some((m) => m.key === 'fga')).toBe(true);
   });
+
+  it('reports pts mismatch when shooting stats match tags but pts does not', () => {
+    const { mismatches } = compareStatsToPlayByPlay(
+      { fgm: 1, fga: 1, threePm: 1, threePa: 1, pts: 8 },
+      ['5:30 Make 3 PT']
+    );
+    expect(mismatches.some((m) => m.key === 'pts')).toBe(true);
+    expect(mismatches.find((m) => m.key === 'pts')?.counted).toBe(3);
+  });
 });
 
 describe('applyPlayByPlayCountsToStats', () => {
-  it('overwrites countable stats from tags', () => {
+  it('overwrites countable stats and recalculates pts from tags', () => {
     const next = applyPlayByPlayCountsToStats(
       { mins: 10, pts: 8, fgm: 0, fga: 0 },
       ['5:30 Make 3 PT']
     );
     expect(next.fgm).toBe(1);
     expect(next.mins).toBe(10);
-    expect(next.pts).toBe(8);
+    expect(next.pts).toBe(3);
+  });
+
+  it('sums pts from twos, threes, and free throws', () => {
+    const next = applyPlayByPlayCountsToStats(
+      { mins: 12, pts: 0 },
+      ['5:30 Make 3 PT', '4:00 Make 2 PT', '4:10 Make FT']
+    );
+    expect(next.fgm).toBe(2);
+    expect(next.threePm).toBe(1);
+    expect(next.ftm).toBe(1);
+    expect(next.pts).toBe(6);
   });
 });

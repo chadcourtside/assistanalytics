@@ -1,3 +1,9 @@
+/** Total points from made field goals and free throws (2PM + 3PM + FTM). */
+export function calcPointsFromShooting(fgm = 0, threePm = 0, ftm = 0) {
+  const twoPm = Math.max(0, fgm - threePm);
+  return twoPm * 2 + threePm * 3 + ftm;
+}
+
 /**
  * Normalize game stats to canonical v1 shape (supports legacy keys).
  */
