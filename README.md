@@ -77,6 +77,10 @@ The app can sync roster data to **Cloudflare D1** so coaches and parents on the 
    ```bash
    npm run db:migrate:remote
    ```
+   If you already ran the initial migration, apply player links only:
+   ```bash
+   npm run db:migrate:player-links:remote
+   ```
 4. **Bind D1 to Pages** — Pages project → **Settings** → **Functions** → **D1 bindings** → add binding name `DB` → database `assistanalytics`.
 5. **Set `SESSION_SECRET`** — Pages → **Settings** → **Environment variables** → add a long random string (production + preview).
 
@@ -95,6 +99,7 @@ Open the URL Wrangler prints (API routes under `/api/*` run as Pages Functions f
 - **Sign up** with email + password; optionally create a team (e.g. `7th Grade Gold`) during signup.
 - **Invite others** — owners open **Team** for coach/parent invite links, member list, roles, and removal.
 - **Parent access** — share the **parent link** (`?join=CODE&role=viewer`) or choose viewer when joining; viewers get read-only UI.
+- **Player portal** — coaches open **Edit Player** → **Create player link** to share with an athlete. The player gets full read access to their stats, trends, benchmarks, and film. Teammates on the same team label show **box score stats only** (no film, tags, or metrics). Other teams in the workspace are hidden.
 - **Auto-save** — edits debounce to the cloud (~1.5s). Failed saves queue locally and retry when back online.
 - **Conflicts** — if two devices save at once, the header offers **Load cloud version**.
 - **Local-only mode** — choose **Continue locally without cloud sync** on the login screen (same as pre-cloud behavior).

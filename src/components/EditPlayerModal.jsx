@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import PlayerLinkSection from './PlayerLinkSection';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
 
-export default function EditPlayerModal({ player, onSave, onClose }) {
+export default function EditPlayerModal({ player, onSave, onClose, cloudEnabled = false }) {
   const [firstName, setFirstName] = useState(player.firstName || '');
   const [lastName, setLastName] = useState(player.lastName || '');
   const [jerseyNumber, setJerseyNumber] = useState(player.jerseyNumber || '');
@@ -114,6 +115,7 @@ export default function EditPlayerModal({ player, onSave, onClose }) {
               Used as the default season filter on Dashboard, Benchmarks, and Film Room.
             </p>
           </div>
+          <PlayerLinkSection player={player} cloudEnabled={cloudEnabled} />
           <div className="flex gap-2 pt-2">
             <button
               type="button"

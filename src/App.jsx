@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import PlayerPortalApp from './components/PlayerPortalApp';
+import { readPlayerTokenFromUrl, readStoredPlayerToken } from './utils/playerPortal';
 import { useAppState } from './hooks/useAppState';
 import { filterGamesByScope } from './utils/gameFilters';
 import RosterTab from './components/RosterTab';
@@ -20,6 +22,16 @@ import EditPlayerModal from './components/EditPlayerModal';
 const TABS = ['Roster', 'Player', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
 
 export default function App() {
+  const [playerToken] = useState(() => readPlayerTokenFromUrl() || readStoredPlayerToken());
+
+  if (playerToken) {
+    return <PlayerPortalApp initialToken={playerToken} />;
+  }
+
+  return <CoachApp />;
+}
+
+function CoachApp() {
   const [activeTab, setActiveTab] = useState('Roster');
   const [filmGameId, setFilmGameId] = useState(null);
   const [filmClipId, setFilmClipId] = useState(null);
@@ -317,6 +329,7 @@ export default function App() {
           player={editingPlayer}
           onSave={handleSavePlayer}
           onClose={() => setEditingPlayer(null)}
+          cloudEnabled={auth.status === 'authed' && !!auth.team && canEdit}
         />
       )}
 

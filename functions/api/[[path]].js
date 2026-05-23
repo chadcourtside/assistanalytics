@@ -19,6 +19,13 @@ import {
 } from '../_lib/http.js';
 import { nowIso } from '../_lib/crypto.js';
 import { listTeamMembers, removeTeamMember, updateMemberRole } from '../_lib/teams.js';
+import {
+  createOrRotatePlayerLink,
+  getPlayerLinkForPlayer,
+  resolvePlayerLinkToken,
+  revokePlayerLink,
+} from '../_lib/playerLinks.js';
+import { buildPlayerPortalPayload } from '../../shared/playerPortalCore.js';
 
 function routeKey(method, segments) {
   return `${method}:${segments.join('/')}`;
@@ -288,6 +295,98 @@ async function handleTeamsMembersDelete(request, env) {
   return jsonResponse({ ok: true });
 }
 
+async function loadTeamState(env, teamId) {
+  const row = await env.DB.prepare('SELECT state_json FROM team_state WHERE team_id = ?')
+    .bind(teamId)
+    .first();
+
+  if (!row) return { error: 'Team data not found', status: 404 };
+
+  try {
+    return { state: JSON.parse(row.state_json) };
+  } catch {
+    return { error: 'Invalid team data', status: 500 };
+  }
+}
+
+function findPlayerInState(state, playerId) {
+  if (!playerId) return null;
+  return (state.players || []).find((p) => p.id === playerId) ?? null;
+}
+
+async function handlePlayerPortalGet(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+  const resolved = await resolvePlayerLinkToken(env, token);
+  if (resolved.error) return errorResponse(resolved.error, resolved.status || 400);
+
+  const loaded = await loadTeamState(env, resolved.teamId);
+  if (loaded.error) return errorResponse(loaded.error, loaded.status || 500);
+
+  const portal = buildPlayerPortalPayload(loaded.state, resolved.playerId);
+  if (portal.error) return errorResponse(portal.error, 404);
+
+  return jsonResponse({
+    teamName: resolved.teamName,
+    portal,
+  });
+}
+
+async function handlePlayersLinkGet(request, env) {
+  const auth = await requireSession(request, env, { write: true });
+  if (auth.error) return errorResponse(auth.error, auth.status);
+
+  const url = new URL(request.url);
+  const playerId = url.searchParams.get('playerId');
+  if (!playerId) return errorResponse('playerId is required', 400);
+
+  const loaded = await loadTeamState(env, auth.session.teamId);
+  if (loaded.error) return errorResponse(loaded.error, loaded.status || 500);
+  if (!findPlayerInState(loaded.state, playerId)) {
+    return errorResponse('Player not found', 404);
+  }
+
+  const link = await getPlayerLinkForPlayer(env, auth.session.teamId, playerId);
+  if (!link) return jsonResponse({ link: null });
+
+  return jsonResponse({
+    link: {
+      token: link.token,
+      createdAt: link.created_at,
+    },
+  });
+}
+
+async function handlePlayersLinkPost(request, env) {
+  const auth = await requireSession(request, env, { write: true });
+  if (auth.error) return errorResponse(auth.error, auth.status);
+
+  const body = await readJson(request);
+  const playerId = body?.playerId;
+  if (!playerId) return errorResponse('playerId is required', 400);
+
+  const loaded = await loadTeamState(env, auth.session.teamId);
+  if (loaded.error) return errorResponse(loaded.error, loaded.status || 500);
+  if (!findPlayerInState(loaded.state, playerId)) {
+    return errorResponse('Player not found', 404);
+  }
+
+  const link = await createOrRotatePlayerLink(env, auth.session.teamId, playerId);
+  return jsonResponse({ link }, 201);
+}
+
+async function handlePlayersLinkDelete(request, env) {
+  const auth = await requireSession(request, env, { write: true });
+  if (auth.error) return errorResponse(auth.error, auth.status);
+
+  const body = await readJson(request);
+  const playerId = body?.playerId;
+  if (!playerId) return errorResponse('playerId is required', 400);
+
+  await revokePlayerLink(env, auth.session.teamId, playerId);
+  return jsonResponse({ ok: true });
+}
+
 const ROUTES = {
   'POST:auth/signup': handleAuthSignup,
   'POST:auth/login': handleAuthLogin,
@@ -298,6 +397,10 @@ const ROUTES = {
   'GET:teams/members': handleTeamsMembersGet,
   'PATCH:teams/members': handleTeamsMembersPatch,
   'DELETE:teams/members': handleTeamsMembersDelete,
+  'GET:player/portal': handlePlayerPortalGet,
+  'GET:players/link': handlePlayersLinkGet,
+  'POST:players/link': handlePlayersLinkPost,
+  'DELETE:players/link': handlePlayersLinkDelete,
   'GET:state': handleStateGet,
   'PUT:state': handleStatePut,
 };
