@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { loadState } from '../storage/loadState';
-import { saveState } from '../storage/saveState';
 import { createBenchmarkSet } from '../data/defaultBenchmarkTargets';
 import { sortGamesNewestFirst } from '../utils/gameStats';
 import { playEventsFromPlayByPlay } from '../utils/playEvents';
@@ -12,6 +10,18 @@ import {
 } from '../utils/importExport';
 import { createPlayerId, createBenchmarkId, createGameId, nowIso } from '../models/appState';
 import { normalizeGameType, DEFAULT_APP_META } from '../constants/gameTypes';
+import {
+  isLocalOnlyMode,
+  loadLocalState,
+  saveLocalState,
+  readCloudSyncMeta,
+  writeCloudSyncMeta,
+} from '../storage/storageAdapter';
+import { cloudPayloadToState, stateToCloudPayload } from '../utils/cloudState';
+import { fetchCloudState, saveCloudState } from '../api/cloudApi';
+import { useAuth } from './useAuth';
+
+const CLOUD_SAVE_DELAY_MS = 1500;
 
 function enrichGamePayload(payload) {
   const playByPlay = payload.playByPlay ?? [];
@@ -29,16 +39,180 @@ function maybeAutoBackup(state) {
 }
 
 export function useAppState() {
-  const [state, setState] = useState(loadState);
+  const {
+    auth,
+    refreshSession,
+    signup,
+    login,
+    logout,
+    createTeam,
+    joinTeam,
+    useLocalMode,
+  } = useAuth();
+
+  const [state, setState] = useState(loadLocalState);
+  const [syncStatus, setSyncStatus] = useState('idle');
+  const [syncError, setSyncError] = useState(null);
+  const [conflictInfo, setConflictInfo] = useState(null);
+
+  const cloudUpdatedAtRef = useRef(readCloudSyncMeta().updatedAt);
+  const skipCloudSaveRef = useRef(true);
+  const saveTimerRef = useRef(null);
+  const stateRef = useRef(state);
   const isInitialMount = useRef(true);
+  const hydrationDoneRef = useRef(false);
+
+  stateRef.current = state;
+
+  const pushCloudState = useCallback(async (nextState, { force = false } = {}) => {
+    if (auth.status !== 'authed') return;
+
+    setSyncStatus('syncing');
+    setSyncError(null);
+
+    try {
+      const result = await saveCloudState(
+        stateToCloudPayload(nextState),
+        force ? null : cloudUpdatedAtRef.current
+      );
+      cloudUpdatedAtRef.current = result.updatedAt;
+      writeCloudSyncMeta({ updatedAt: result.updatedAt });
+      setSyncStatus('saved');
+      setConflictInfo(null);
+    } catch (err) {
+      if (err.status === 409 && err.body?.state) {
+        setSyncStatus('conflict');
+        setConflictInfo({
+          updatedAt: err.body.updatedAt,
+          state: cloudPayloadToState(err.body.state),
+        });
+        setSyncError('Cloud data was updated on another device.');
+        return;
+      }
+
+      setSyncStatus('error');
+      setSyncError(err.body?.error || err.message || 'Cloud sync failed');
+    }
+  }, [auth.status]);
+
+  const scheduleCloudSave = useCallback(
+    (nextState) => {
+      if (auth.status !== 'authed') return;
+      if (skipCloudSaveRef.current) return;
+
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        pushCloudState(nextState);
+      }, CLOUD_SAVE_DELAY_MS);
+    },
+    [auth.status, pushCloudState]
+  );
+
+  const hydrateFromCloud = useCallback(async () => {
+    try {
+      const { state: cloudState, updatedAt } = await fetchCloudState();
+      cloudUpdatedAtRef.current = updatedAt;
+      writeCloudSyncMeta({ updatedAt });
+
+      if (cloudState) {
+        const migrated = cloudPayloadToState(cloudState);
+        if (migrated) {
+          skipCloudSaveRef.current = true;
+          setState(migrated);
+          saveLocalState(migrated);
+        }
+      } else {
+        const local = stateRef.current;
+        skipCloudSaveRef.current = true;
+        await pushCloudState(local, { force: true });
+      }
+
+      setSyncStatus('saved');
+    } catch (err) {
+      setSyncStatus('offline');
+      setSyncError('Using offline cache — cloud sync unavailable.');
+    } finally {
+      hydrationDoneRef.current = true;
+      setTimeout(() => {
+        skipCloudSaveRef.current = false;
+      }, 0);
+    }
+  }, [pushCloudState]);
 
   useEffect(() => {
-    saveState(state);
+    let cancelled = false;
+
+    async function init() {
+      if (isLocalOnlyMode()) {
+        if (!cancelled) {
+          useLocalMode();
+          hydrationDoneRef.current = true;
+          skipCloudSaveRef.current = false;
+        }
+        return;
+      }
+
+      const session = await refreshSession();
+      if (cancelled) return;
+
+      if (!session?.team) {
+        hydrationDoneRef.current = true;
+        skipCloudSaveRef.current = false;
+      }
+    }
+
+    init();
+
+    return () => {
+      cancelled = true;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [refreshSession, useLocalMode]);
+
+  useEffect(() => {
+    if (auth.status !== 'authed' || !auth.team?.id) return;
+
+    let cancelled = false;
+
+    async function syncFromCloud() {
+      await hydrateFromCloud();
+      if (cancelled && saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    }
+
+    syncFromCloud();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.status, auth.team?.id, hydrateFromCloud]);
+
+  useEffect(() => {
+    saveLocalState(state);
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-  }, [state]);
+    scheduleCloudSave(state);
+  }, [state, scheduleCloudSave]);
+
+  const acceptCloudConflict = useCallback(() => {
+    if (!conflictInfo?.state) return;
+    skipCloudSaveRef.current = true;
+    setState(conflictInfo.state);
+    saveLocalState(conflictInfo.state);
+    cloudUpdatedAtRef.current = conflictInfo.updatedAt;
+    writeCloudSyncMeta({ updatedAt: conflictInfo.updatedAt });
+    setConflictInfo(null);
+    setSyncStatus('saved');
+    setSyncError(null);
+    setTimeout(() => {
+      skipCloudSaveRef.current = false;
+    }, 0);
+  }, [conflictInfo]);
+
+  const retryCloudSync = useCallback(() => {
+    pushCloudState(stateRef.current, { force: false });
+  }, [pushCloudState]);
 
   const activePlayer = useMemo(
     () => state.players.find((p) => p.id === state.activePlayerId) ?? null,
@@ -53,9 +227,7 @@ export function useAppState() {
 
   const activeBenchmarkSet = useMemo(() => {
     if (!state.activePlayerId) return null;
-    return (
-      state.benchmarkSets.find((b) => b.playerId === state.activePlayerId) ?? null
-    );
+    return state.benchmarkSets.find((b) => b.playerId === state.activePlayerId) ?? null;
   }, [state.benchmarkSets, state.activePlayerId]);
 
   const setActivePlayerId = useCallback((playerId) => {
@@ -96,9 +268,7 @@ export function useAppState() {
     if (!trimmedFirst) return null;
 
     const trimmedLast = (lastName || '').trim();
-    const displayName = trimmedLast
-      ? `${trimmedFirst} ${trimmedLast}`
-      : trimmedFirst;
+    const displayName = trimmedLast ? `${trimmedFirst} ${trimmedLast}` : trimmedFirst;
 
     const id = createPlayerId();
     const player = {
@@ -196,9 +366,7 @@ export function useAppState() {
 
       const trimmedLast = (updates.lastName || '').trim();
       const firstName = trimmedFirst || existing.firstName;
-      const displayName = trimmedLast
-        ? `${firstName} ${trimmedLast}`
-        : firstName;
+      const displayName = trimmedLast ? `${firstName} ${trimmedLast}` : firstName;
 
       return {
         ...prev,
@@ -302,6 +470,18 @@ export function useAppState() {
     activePlayer,
     activePlayerGames,
     activeBenchmarkSet,
+    auth,
+    syncStatus,
+    syncError,
+    conflictInfo,
+    signup,
+    login,
+    logout,
+    createTeam,
+    joinTeam,
+    useLocalMode,
+    acceptCloudConflict,
+    retryCloudSync,
     setActivePlayerId,
     addPlayer,
     addGame,

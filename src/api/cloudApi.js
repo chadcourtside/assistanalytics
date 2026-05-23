@@ -1,0 +1,91 @@
+const API_BASE = '/api';
+
+async function apiFetch(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  let body = null;
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+
+  if (!response.ok) {
+    const error = new Error(body?.error || `Request failed (${response.status})`);
+    error.status = response.status;
+    error.body = body;
+    throw error;
+  }
+
+  return body;
+}
+
+export async function fetchSession() {
+  return apiFetch('/auth/me');
+}
+
+export async function signup({ email, password, teamName }) {
+  return apiFetch('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, teamName }),
+  });
+}
+
+export async function login({ email, password }) {
+  return apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function logout() {
+  return apiFetch('/auth/logout', { method: 'POST' });
+}
+
+export async function createTeam({ name }) {
+  return apiFetch('/teams/create', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function joinTeam({ inviteCode }) {
+  return apiFetch('/teams/join', {
+    method: 'POST',
+    body: JSON.stringify({ inviteCode }),
+  });
+}
+
+export async function fetchCloudState() {
+  return apiFetch('/state');
+}
+
+export async function saveCloudState(state, expectedUpdatedAt) {
+  const headers = {};
+  if (expectedUpdatedAt) {
+    headers['If-Match'] = expectedUpdatedAt;
+  }
+
+  return apiFetch('/state', {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ state, expectedUpdatedAt }),
+  });
+}
+
+export async function isCloudApiAvailable() {
+  try {
+    await fetchSession();
+    return true;
+  } catch (err) {
+    if (err.status === 503) return false;
+    return true;
+  }
+}

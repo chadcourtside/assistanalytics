@@ -12,6 +12,8 @@ import StatGlossaryButton from './components/StatGlossaryButton';
 import DataTransferMenu from './components/DataTransferMenu';
 import BackupReminderBanner from './components/BackupReminderBanner';
 import PlayerViewTab from './components/PlayerViewTab';
+import AuthGate from './components/AuthGate';
+import SyncStatus from './components/SyncStatus';
 import EditPlayerModal from './components/EditPlayerModal';
 
 const TABS = ['Roster', 'Player', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
@@ -27,6 +29,18 @@ export default function App() {
     activePlayer,
     activePlayerGames,
     activeBenchmarkSet,
+    auth,
+    syncStatus,
+    syncError,
+    conflictInfo,
+    signup,
+    login,
+    logout,
+    createTeam,
+    joinTeam,
+    useLocalMode,
+    acceptCloudConflict,
+    retryCloudSync,
     setActivePlayerId,
     addPlayer,
     addGame,
@@ -91,6 +105,25 @@ export default function App() {
     if (player) setEditingPlayer(player);
   };
 
+  const showAuthGate =
+    auth.status === 'unauthed' ||
+    auth.status === 'needs_team' ||
+    auth.status === 'loading' ||
+    auth.status === 'offline_api';
+
+  if (showAuthGate && auth.status !== 'local') {
+    return (
+      <AuthGate
+        auth={auth}
+        onSignup={signup}
+        onLogin={login}
+        onCreateTeam={createTeam}
+        onJoinTeam={joinTeam}
+        onUseLocal={useLocalMode}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-slate-900 text-white py-6 px-4 md:px-8 shadow-md no-print">
@@ -102,7 +135,17 @@ export default function App() {
             </h1>
             <p className="text-slate-400 mt-1">Player Development &amp; Film Review</p>
           </div>
-          <div className="flex items-center gap-3 relative">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 relative">
+            <SyncStatus
+              auth={auth}
+              syncStatus={syncStatus}
+              syncError={syncError}
+              conflictInfo={conflictInfo}
+              onAcceptCloud={acceptCloudConflict}
+              onRetry={retryCloudSync}
+              onLogout={logout}
+            />
+            <div className="flex items-center gap-3 relative">
             <PlayerSelector
               players={state.players}
               activePlayerId={state.activePlayerId}
@@ -126,6 +169,7 @@ export default function App() {
             />
             <StatGlossaryButton />
             <AddPlayerForm onAdd={addPlayer} />
+            </div>
           </div>
         </div>
       </header>
@@ -135,6 +179,12 @@ export default function App() {
         onExport={recordExport}
         onDismiss={snoozeBackupReminder}
       />
+
+      {auth.team?.role === 'viewer' && (
+        <div className="bg-blue-50 border-b border-blue-200 text-blue-900 text-sm text-center py-2 px-4">
+          View-only team access — contact your coach to log stats.
+        </div>
+      )}
 
       <nav className="bg-white border-b border-gray-200 px-4 md:px-8 no-print sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto flex overflow-x-auto hide-scrollbar">

@@ -13,7 +13,7 @@ A local-first **multi-player** basketball development app for tracking individua
 - **Smart Film Room** — Structured play-event filters with embedded YouTube playback
 - **Export / Import** — JSON backup for moving data between devices (phone ↔ laptop)
 
-Data is stored in your browser (`localStorage`, schema version 2). No account required. Use **Export** before switching devices, then **Import → Replace** on the new device.
+Data is stored in your browser (`localStorage`, schema version 2). Optional **cloud sync** stores the same dataset in Cloudflare D1 for shared team access. Use **Export** for manual backups; cloud sync auto-saves when signed in.
 
 ## Tech stack
 
@@ -23,8 +23,8 @@ Data is stored in your browser (`localStorage`, schema version 2). No account re
 | Build | Vite 6 |
 | Styling | Tailwind CSS 4 |
 | PDF export | html2pdf.js |
-| Storage | Browser localStorage |
-| Hosting | Cloudflare Pages (static) |
+| Storage | Browser localStorage + optional Cloudflare D1 sync |
+| Hosting | Cloudflare Pages (static UI + Functions API) |
 
 ## Install
 
@@ -65,6 +65,42 @@ npm run build
 npx wrangler pages deploy dist --project-name=assistanalytics
 ```
 
+## Cloud sync (shared roster)
+
+The app can sync roster data to **Cloudflare D1** so coaches and parents on the same team share one dataset across devices.
+
+### One-time Cloudflare setup
+
+1. **Create a D1 database** — Dashboard → **Workers & Pages** → **D1** → Create → name it `assistanalytics`.
+2. **Copy the database ID** into `wrangler.toml` (`database_id` under `[[d1_databases]]`).
+3. **Run the schema migration:**
+   ```bash
+   npm run db:migrate:remote
+   ```
+4. **Bind D1 to Pages** — Pages project → **Settings** → **Functions** → **D1 bindings** → add binding name `DB` → database `assistanalytics`.
+5. **Set `SESSION_SECRET`** — Pages → **Settings** → **Environment variables** → add a long random string (production + preview).
+
+### Local API development
+
+```bash
+npm install
+npm run db:migrate:local
+npm run pages:dev
+```
+
+Open the URL Wrangler prints (API routes under `/api/*` run as Pages Functions from the `functions/` folder).
+
+### How cloud sync works
+
+- **Sign up** with email + password; optionally create a team (e.g. `7th Grade Gold`) during signup.
+- **Invite others** — owners see an invite code in the header; assistants/parents use **Join team** after logging in.
+- **Auto-save** — edits debounce to the cloud (~1.5s). `localStorage` remains an offline cache.
+- **Conflicts** — if two devices save at once, the header offers **Load cloud version**.
+- **Local-only mode** — choose **Continue locally without cloud sync** on the login screen (same as pre-cloud behavior).
+
+Export/import JSON backups still work for manual backups and migration.
+
+
 ## How to use
 
 1. Start the app — a default player (Avery) with sample games loads on first visit.
@@ -85,16 +121,16 @@ npx wrangler pages deploy dist --project-name=assistanalytics
 
 ## Known limitations
 
-- **No cloud sync** — Data stays in the browser until you export/import. Export regularly during the season.
+- **Cloud sync requires D1 setup** — See [Cloud sync](#cloud-sync-shared-roster) above. Without it, use Export/import between devices.
 - **Legacy migration** — Old saves (`averyGames` or `assistanalytics-games`) migrate into the default Avery player on first load.
 - **Film filters** — Parsed from play-by-play keywords; use consistent tags (Assist, Paint touch, LB TOV) for best results.
 - **YouTube** — Requires internet for video embeds and links.
 
 ## Next improvement ideas
 
-- Optional cloud sync (Cloudflare KV / D1)
-- Roster / team views for coaches
-- Smarter benchmark target parsing for edge-case strings
+- Magic-link email login
+- R2 nightly auto-backup exports
+- Offline sync retry queue
 
 ## Repository
 

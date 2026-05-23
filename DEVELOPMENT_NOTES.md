@@ -94,17 +94,19 @@ Recommended tags when logging: **Make/Miss 2 PT**, **Make/Miss 3 PT**, **Assist*
 2. **Hooks** — `FilmRoomTab` must call hooks before any early return
 3. **Schema** — Bump `schemaVersion` and extend `migrateState.js` when shape changes
 
-## Cloudflare Pages
+## Cloudflare Pages + D1 sync
 
 - Build output: `dist/`
 - SPA fallback: `public/_redirects`
-- Config stub: `wrangler.toml`
+- API: `functions/api/[[path]].js` (Pages Functions)
+- Schema: `migrations/0001_init.sql`
+- Config: `wrangler.toml` (D1 binding `DB`, `SESSION_SECRET` in dashboard)
+- Local dev: `npm run db:migrate:local && npm run pages:dev`
 
 ## Next steps
 
-1. Optional cloud sync (Cloudflare D1/KV)
-2. Duplicate-last-game / faster mobile game entry
-3. TypeScript migration + broader test coverage
+1. Duplicate-last-game / faster mobile game entry
+2. TypeScript migration + broader test coverage
 
 ## Original prototype
 
