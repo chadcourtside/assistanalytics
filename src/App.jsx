@@ -29,11 +29,11 @@ import { isViewer } from './utils/accessControl';
 
 const COACH_TABS = [
   'Roster',
+  'Team Night',
   'Player',
   'Dashboard',
   'Benchmarks',
   'Game Logs',
-  'Team Night',
   'Smart Film Room',
 ];
 const PARENT_TABS = [
