@@ -126,6 +126,13 @@ export async function consumeAuthToken({ token }) {
   });
 }
 
+export async function requestNarrationSuggestions({ transcript, playerName }) {
+  return apiFetch('/ai/narration-to-pbp', {
+    method: 'POST',
+    body: JSON.stringify({ transcript, playerName }),
+  });
+}
+
 export async function isCloudApiAvailable() {
   try {
     await fetchSession();

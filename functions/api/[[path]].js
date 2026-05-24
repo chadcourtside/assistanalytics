@@ -27,6 +27,7 @@ import {
 } from '../_lib/playerLinks.js';
 import { buildPlayerPortalPayload } from '../../shared/playerPortalCore.js';
 import { sendEmail, getAppBaseUrl } from '../_lib/email.js';
+import { handleNarrationToPlayByPlay } from '../_lib/narrationImport.js';
 import {
   consumeAuthToken,
   createAuthToken,
@@ -461,6 +462,16 @@ async function handleAuthResetPassword(request, env) {
   return jsonResponse({ ok: true, ...response.body }, 200, headers);
 }
 
+async function handleAiNarrationToPbp(request, env) {
+  const auth = await requireSession(request, env, { write: true });
+  if (auth.error) return errorResponse(auth.error, auth.status || 401);
+
+  const body = await readJson(request);
+  const result = handleNarrationToPlayByPlay(body || {});
+  if (result.error) return errorResponse(result.error, result.status || 400);
+  return jsonResponse(result);
+}
+
 const ROUTES = {
   'POST:auth/signup': handleAuthSignup,
   'POST:auth/login': handleAuthLogin,
@@ -481,6 +492,7 @@ const ROUTES = {
   'DELETE:players/link': handlePlayersLinkDelete,
   'GET:state': handleStateGet,
   'PUT:state': handleStatePut,
+  'POST:ai/narration-to-pbp': handleAiNarrationToPbp,
 };
 
 export async function onRequest(context) {

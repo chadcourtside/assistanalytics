@@ -16,6 +16,7 @@ import StatHelp from './StatHelp';
 import PlayByPlayTagBar from './PlayByPlayTagBar';
 import PlayByPlayReconcilePanel from './PlayByPlayReconcilePanel';
 import { insertPlayByPlayLine } from '../utils/playByPlayForm';
+import NarrationImportModal from './NarrationImportModal';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
@@ -32,6 +33,7 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
   const [playTime, setPlayTime] = useState('');
   const [customNote, setCustomNote] = useState('');
   const [quickLogMode, setQuickLogMode] = useState(false);
+  const [narrationImportOpen, setNarrationImportOpen] = useState(false);
   const playByPlayRef = useRef(null);
 
   const statFields = quickLogMode ? QUICK_STAT_FIELDS : STAT_FIELDS;
@@ -300,9 +302,18 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-              Play-by-play
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <label className="block text-xs font-semibold text-gray-500 uppercase">
+                Play-by-play
+              </label>
+              <button
+                type="button"
+                onClick={() => setNarrationImportOpen(true)}
+                className="text-xs font-semibold text-violet-700 hover:text-violet-900 border border-violet-200 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-md"
+              >
+                Import from narration
+              </button>
+            </div>
             <PlayByPlayReconcilePanel
               stats={form.stats}
               playByPlayText={form.playByPlayText}
@@ -384,6 +395,19 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
           </button>
         </div>
       </div>
+
+      {narrationImportOpen && (
+        <NarrationImportModal
+          playerName={player?.displayName || ''}
+          videoUrl={form.videoUrl}
+          existingPlayByPlayText={form.playByPlayText}
+          onApply={(mergedText) => {
+            setField('playByPlayText', mergedText);
+            setNarrationImportOpen(false);
+          }}
+          onClose={() => setNarrationImportOpen(false)}
+        />
+      )}
     </div>
   );
 }
