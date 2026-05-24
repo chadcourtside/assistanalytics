@@ -17,6 +17,7 @@ import PlayByPlayTagBar from './PlayByPlayTagBar';
 import PlayByPlayReconcilePanel from './PlayByPlayReconcilePanel';
 import { insertPlayByPlayLine } from '../utils/playByPlayForm';
 import NarrationImportModal from './NarrationImportModal';
+import NarrationCheatSheetModal from './NarrationCheatSheetModal';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
@@ -34,6 +35,7 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
   const [customNote, setCustomNote] = useState('');
   const [quickLogMode, setQuickLogMode] = useState(false);
   const [narrationImportOpen, setNarrationImportOpen] = useState(false);
+  const [narrationGuideOpen, setNarrationGuideOpen] = useState(false);
   const playByPlayRef = useRef(null);
 
   const statFields = quickLogMode ? QUICK_STAT_FIELDS : STAT_FIELDS;
@@ -306,13 +308,22 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
               <label className="block text-xs font-semibold text-gray-500 uppercase">
                 Play-by-play
               </label>
-              <button
-                type="button"
-                onClick={() => setNarrationImportOpen(true)}
-                className="text-xs font-semibold text-violet-700 hover:text-violet-900 border border-violet-200 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-md"
-              >
-                Import from narration
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setNarrationGuideOpen(true)}
+                  className="text-xs font-semibold text-gray-600 hover:text-gray-900 underline underline-offset-2"
+                >
+                  Narration guide
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNarrationImportOpen(true)}
+                  className="text-xs font-semibold text-violet-700 hover:text-violet-900 border border-violet-200 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-md"
+                >
+                  Import from narration
+                </button>
+              </div>
             </div>
             <PlayByPlayReconcilePanel
               stats={form.stats}
@@ -407,6 +418,10 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
           }}
           onClose={() => setNarrationImportOpen(false)}
         />
+      )}
+
+      {narrationGuideOpen && (
+        <NarrationCheatSheetModal onClose={() => setNarrationGuideOpen(false)} />
       )}
     </div>
   );

@@ -135,8 +135,8 @@ export function normalizeSpeechToDescription(rawText) {
     }
   };
 
-  if (/\bmake\s*ft\b|\bmade\s*ft\b|\bft\s*make\b/.test(lower)) add('Make FT');
-  else if (/\bmiss\s*ft\b|\bmissed\s*ft\b/.test(lower)) add('Miss FT');
+  if (/\bmake\s*ft\b|\bmade\s*ft\b|\bft\s*make\b|make\s*free\s*throw|\bftm\b/.test(lower)) add('Make FT');
+  else if (/\bmiss\s*ft\b|\bmissed\s*ft\b|miss\s*free\s*throw/.test(lower)) add('Miss FT');
   else if (/\bmake\s*three\b|\bmake\s*3\b|\bmade\s*three\b|\bmade\s*3\b|\bthree\s*pointer\b/.test(lower)) {
     add('Make 3 PT');
   } else if (/\bmiss\s*three\b|\bmiss\s*3\b|\bmissed\s*three\b/.test(lower)) {
@@ -148,10 +148,11 @@ export function normalizeSpeechToDescription(rawText) {
   }
 
   if (/\blive\s*ball\s*turnover\b|\blb\s*tov\b/.test(lower)) add('LB TOV');
+  else if (/\bdb\s*tov\b|\bdb\s*turnover\b|\bdead\s*ball\s*turnover\b/.test(lower)) add('TOV');
   else if (/\bturnover\b|\btov\b/.test(lower)) add('TOV');
 
-  if (/\b(?:2nd|second)\s*assist\b/.test(lower)) add('2nd Assist');
-  else if (/\bscreen\s*assist\b/.test(lower)) add('Screen assist');
+  if (/\b(?:2nd|second)\s*assist\b|\b2nd\s*ast\b|\bhockey\s*assist\b/.test(lower)) add('2nd Assist');
+  else if (/\bscreen\s*assist\b|\bscr\s*ast\b/.test(lower)) add('Screen assist');
   else if (/\bassist\b/.test(lower)) add('Assist');
 
   if (/\bhqpa\b|clean entry|potential assist/.test(lower)) add('HQPA');
@@ -165,6 +166,8 @@ export function normalizeSpeechToDescription(rawText) {
   if (/\bblock\b|\bblk\b/.test(lower)) add('Block');
   if (/foul drawn|drawn foul|\bfd\b/.test(lower)) add('Foul drawn');
   else if (/\bpersonal foul\b|\bpf\b/.test(lower)) add('Personal foul');
+
+  if (/\bdefl\b|\bdeflection\b/.test(lower)) add('Def');
   else if (/\bdef\b/.test(lower) && !parts.some((p) => p.includes('reb'))) add('Def');
 
   if (!mapped && /^note:/i.test(text)) {
@@ -253,6 +256,19 @@ export function buildNarrationSuggestions(segments, { playerName = '' } = {}) {
   }
 
   return { suggestions, warnings, stub: true };
+}
+
+/** Build WebVTT-style transcript text from Whisper verbose_json segments. */
+export function whisperSegmentsToTranscript(segments) {
+  if (!Array.isArray(segments)) return '';
+  return segments
+    .filter((s) => (s?.text || '').trim())
+    .map((s) => {
+      const start = formatSecondsAsPlayTime(s.start ?? 0);
+      const end = formatSecondsAsPlayTime(s.end ?? s.start ?? 0);
+      return `${start} --> ${end}\n${String(s.text).trim()}`;
+    })
+    .join('\n\n');
 }
 
 /**

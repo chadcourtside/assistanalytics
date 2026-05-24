@@ -467,7 +467,7 @@ async function handleAiNarrationToPbp(request, env) {
   if (auth.error) return errorResponse(auth.error, auth.status || 401);
 
   const body = await readJson(request);
-  const result = handleNarrationToPlayByPlay(body || {});
+  const result = await handleNarrationToPlayByPlay(body || {}, env);
   if (result.error) return errorResponse(result.error, result.status || 400);
   return jsonResponse(result);
 }

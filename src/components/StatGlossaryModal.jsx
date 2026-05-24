@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { STANDARD_STATS, CUSTOM_STATS } from '../data/statGlossary';
+import NarrationCheatSheetContent from './NarrationCheatSheetContent';
 
 function GlossarySection({ title, subtitle, stats }) {
   return (
@@ -31,7 +33,14 @@ function GlossarySection({ title, subtitle, stats }) {
   );
 }
 
-export default function StatGlossaryModal({ onClose }) {
+const TABS = [
+  { id: 'stats', label: 'Stats' },
+  { id: 'narration', label: 'Narration' },
+];
+
+export default function StatGlossaryModal({ onClose, initialTab = 'stats' }) {
+  const [tab, setTab] = useState(initialTab === 'narration' ? 'narration' : 'stats');
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 no-print"
@@ -39,7 +48,7 @@ export default function StatGlossaryModal({ onClose }) {
       role="presentation"
     >
       <div
-        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        className={`bg-white rounded-lg shadow-xl w-full max-h-[90vh] flex flex-col ${tab === 'narration' ? 'max-w-3xl' : 'max-w-2xl'}`}
         role="dialog"
         aria-labelledby="glossary-title"
         onClick={(e) => e.stopPropagation()}
@@ -47,10 +56,12 @@ export default function StatGlossaryModal({ onClose }) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 shrink-0">
           <div>
             <h2 id="glossary-title" className="text-xl font-bold text-gray-800">
-              Stat Glossary
+              {tab === 'narration' ? 'Narration cheat sheet' : 'Stat Glossary'}
             </h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              Hover dotted labels throughout the app for quick definitions.
+              {tab === 'narration'
+                ? 'Phrases for sideline voice-over and Import from narration.'
+                : 'Hover dotted labels throughout the app for quick definitions.'}
             </p>
           </div>
           <button
@@ -63,17 +74,40 @@ export default function StatGlossaryModal({ onClose }) {
           </button>
         </div>
 
+        <nav className="flex border-b border-gray-200 px-5 shrink-0">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-3 text-sm font-semibold border-b-2 -mb-px ${
+                tab === t.id
+                  ? 'border-blue-600 text-blue-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
         <div className="overflow-y-auto flex-1 p-5">
-          <GlossarySection
-            title="Standard stats"
-            subtitle="Common basketball metrics with standard formulas in this app."
-            stats={STANDARD_STATS}
-          />
-          <GlossarySection
-            title="Custom development stats"
-            subtitle="Tracked for player development in Assist Analytics. Log consistently game to game."
-            stats={CUSTOM_STATS}
-          />
+          {tab === 'stats' ? (
+            <>
+              <GlossarySection
+                title="Standard stats"
+                subtitle="Common basketball metrics with standard formulas in this app."
+                stats={STANDARD_STATS}
+              />
+              <GlossarySection
+                title="Custom development stats"
+                subtitle="Tracked for player development in Assist Analytics. Log consistently game to game."
+                stats={CUSTOM_STATS}
+              />
+            </>
+          ) : (
+            <NarrationCheatSheetContent compact />
+          )}
         </div>
 
         <div className="px-5 py-4 border-t border-gray-200 shrink-0">

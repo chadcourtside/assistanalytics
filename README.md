@@ -8,7 +8,7 @@ A local-first **multi-player** basketball development app for tracking individua
 - **Roster** — Team-grouped player list with season snapshot, key benchmark status, and quick actions
 - **Dashboard** — Last game snapshot, season trend charts, totals, box score, per-24/32 rates, PDF export
 - **Stat Guide** — In-app glossary (header button) plus hover tooltips on stat labels
-- **Game Logs** — Add, edit, and delete games; per-game **team** picker (club vs travel); play-by-play and YouTube timestamp links
+- **Game Logs** — Add, edit, and delete games; per-game **team** picker (club vs travel); play-by-play and YouTube timestamp links; **Import from narration** (paste transcript or upload audio → Whisper → coach review)
 - **Team Night** — Same-date box scores for every player who logged a game
 - **Seasons** — Set a **current season** (header badge), archive past seasons, and still view archived stats via season filters
 - **Benchmarks** — Per-player development targets vs season averages; **edit targets in the UI**
@@ -93,6 +93,7 @@ The app can sync roster data to **Cloudflare D1** so coaches and parents on the 
    - `RESEND_API_KEY` — for magic-link and password-reset email (optional; without it, links are logged in dev)
    - `EMAIL_FROM` — verified sender in Resend (e.g. `Assist Analytics <noreply@yourdomain.com>`)
    - `APP_URL` — public site URL (e.g. `https://assistanalytics.pages.dev`) for links in emails
+   - `OPENAI_API_KEY` — optional; enables **Whisper** audio transcription for Import from narration (Game Logs)
 
 ### Local API development
 
@@ -100,6 +101,12 @@ The app can sync roster data to **Cloudflare D1** so coaches and parents on the 
 npm install
 npm run db:migrate:local
 npm run pages:dev
+```
+
+For Whisper transcription locally, create `.dev.vars` in the project root:
+
+```
+OPENAI_API_KEY=sk-...
 ```
 
 Open the URL Wrangler prints (API routes under `/api/*` run as Pages Functions from the `functions/` folder).

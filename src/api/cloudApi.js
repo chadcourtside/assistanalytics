@@ -126,10 +126,22 @@ export async function consumeAuthToken({ token }) {
   });
 }
 
-export async function requestNarrationSuggestions({ transcript, playerName }) {
+export async function requestNarrationSuggestions({
+  transcript,
+  playerName,
+  audioBase64,
+  audioMimeType,
+  audioFileName,
+}) {
   return apiFetch('/ai/narration-to-pbp', {
     method: 'POST',
-    body: JSON.stringify({ transcript, playerName }),
+    body: JSON.stringify({
+      transcript,
+      playerName,
+      audioBase64,
+      audioMimeType,
+      audioFileName,
+    }),
   });
 }
 

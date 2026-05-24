@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { getYoutubeId, getYoutubeWatchUrl, parseTime } from '../utils/youtube';
 import { mergeSuggestionsIntoPlayByPlay } from '../../shared/narrationImport.js';
 import { requestNarrationSuggestions } from '../utils/narrationImportClient';
+import { NARRATION_AUDIO_ACCEPT, readAudioFileAsBase64 } from '../utils/audioUpload';
+import NarrationCheatSheetModal from './NarrationCheatSheetModal';
 
 const EXAMPLE_TRANSCRIPT = `00:00:25.000 --> 00:00:27.000
 paint touch assist
@@ -32,11 +34,15 @@ export default function NarrationImportModal({
   onClose,
 }) {
   const [step, setStep] = useState('input');
+  const [inputMode, setInputMode] = useState('paste');
   const [transcript, setTranscript] = useState('');
+  const [audioFile, setAudioFile] = useState(null);
+  const [transcriptionSource, setTranscriptionSource] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [warnings, setWarnings] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [cheatSheetOpen, setCheatSheetOpen] = useState(false);
 
   const videoId = getYoutubeId(videoUrl);
 
@@ -45,17 +51,35 @@ export default function NarrationImportModal({
     [suggestions]
   );
 
+  const canGenerate =
+    inputMode === 'paste' ? Boolean(transcript.trim()) : Boolean(audioFile);
+
+  const applyResult = (result) => {
+    setSuggestions(result.suggestions || []);
+    setWarnings(result.warnings || []);
+    if (result.transcript) setTranscript(result.transcript);
+    setTranscriptionSource(result.transcriptionSource || 'paste');
+    setStep('review');
+  };
+
   const handleGenerate = async () => {
     setError('');
     setLoading(true);
     try {
-      const result = await requestNarrationSuggestions({
-        transcript,
-        playerName,
-      });
-      setSuggestions(result.suggestions || []);
-      setWarnings(result.warnings || []);
-      setStep('review');
+      if (inputMode === 'audio' && audioFile) {
+        const audioPayload = await readAudioFileAsBase64(audioFile);
+        const result = await requestNarrationSuggestions({
+          playerName,
+          ...audioPayload,
+        });
+        applyResult(result);
+      } else {
+        const result = await requestNarrationSuggestions({
+          transcript,
+          playerName,
+        });
+        applyResult(result);
+      }
     } catch (err) {
       setError(err.message || 'Could not generate suggestions');
     } finally {
@@ -104,8 +128,8 @@ export default function NarrationImportModal({
               Import from narration
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Paste a timestamped transcript from sideline voice-over or YouTube captions. Review
-              suggestions before adding to play-by-play.
+              Upload sideline audio or paste a transcript. Whisper transcribes speech; you review
+              every line before it enters play-by-play.
             </p>
           </div>
           <button
@@ -122,32 +146,95 @@ export default function NarrationImportModal({
           {step === 'input' && (
             <>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
-                <p className="font-semibold mb-1">How to narrate</p>
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
+                  <p className="font-semibold">How to narrate</p>
+                  <button
+                    type="button"
+                    onClick={() => setCheatSheetOpen(true)}
+                    className="text-xs font-semibold text-violet-700 hover:text-violet-900 underline underline-offset-2 shrink-0"
+                  >
+                    Full cheat sheet
+                  </button>
+                </div>
                 <p>
                   Say short tags at each moment: &quot;make two&quot;, &quot;paint touch&quot;,
-                  &quot;assist&quot;, &quot;live ball turnover&quot;. Timestamps come from the
-                  transcript — you don&apos;t need to say the clock aloud.
+                  &quot;assist&quot;, &quot;live ball turnover&quot;, &quot;deflection&quot;,
+                  &quot;DB TOV&quot;. Timestamps come from the recording.
                 </p>
               </div>
 
-              <label className="block text-xs font-semibold text-gray-500 uppercase">
-                Transcript
-                <textarea
-                  value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
-                  rows={12}
-                  className="mt-1 w-full text-sm px-3 py-2 border border-gray-300 rounded-md font-mono focus:ring focus:ring-blue-200 focus:outline-none"
-                  placeholder={EXAMPLE_TRANSCRIPT}
-                />
-              </label>
+              <div className="flex gap-2 border-b border-gray-200 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setInputMode('audio')}
+                  className={`px-4 py-2 text-sm font-semibold rounded-t-md border-b-2 ${
+                    inputMode === 'audio'
+                      ? 'border-violet-600 text-violet-800'
+                      : 'border-transparent text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  Upload audio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputMode('paste')}
+                  className={`px-4 py-2 text-sm font-semibold rounded-t-md border-b-2 ${
+                    inputMode === 'paste'
+                      ? 'border-violet-600 text-violet-800'
+                      : 'border-transparent text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  Paste transcript
+                </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setTranscript(EXAMPLE_TRANSCRIPT)}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-800"
-              >
-                Load example transcript
-              </button>
+              {inputMode === 'audio' ? (
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase">
+                    Voice memo / narration audio
+                    <input
+                      type="file"
+                      accept={NARRATION_AUDIO_ACCEPT}
+                      onChange={(e) => {
+                        setAudioFile(e.target.files?.[0] || null);
+                        setError('');
+                      }}
+                      className="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-violet-50 file:text-violet-800 file:font-semibold hover:file:bg-violet-100"
+                    />
+                  </label>
+                  {audioFile && (
+                    <p className="text-sm text-gray-600">
+                      Selected: <span className="font-medium">{audioFile.name}</span> (
+                      {(audioFile.size / (1024 * 1024)).toFixed(1)} MB)
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400">
+                    MP3, M4A, WAV, or WebM up to 25 MB. Requires cloud sign-in and{' '}
+                    <code className="text-gray-500">OPENAI_API_KEY</code> on the server.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase">
+                    Transcript
+                    <textarea
+                      value={transcript}
+                      onChange={(e) => setTranscript(e.target.value)}
+                      rows={12}
+                      className="mt-1 w-full text-sm px-3 py-2 border border-gray-300 rounded-md font-mono focus:ring focus:ring-blue-200 focus:outline-none"
+                      placeholder={EXAMPLE_TRANSCRIPT}
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setTranscript(EXAMPLE_TRANSCRIPT)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                  >
+                    Load example transcript
+                  </button>
+                </>
+              )}
 
               {error && <p className="text-sm text-red-600">{error}</p>}
             </>
@@ -155,6 +242,13 @@ export default function NarrationImportModal({
 
           {step === 'review' && (
             <>
+              {transcriptionSource === 'whisper' && (
+                <div className="bg-violet-50 border border-violet-200 rounded-lg p-3 text-sm text-violet-900">
+                  Transcribed with Whisper. Edit the transcript below if needed, then regenerate or
+                  adjust individual lines.
+                </div>
+              )}
+
               {warnings.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-900 space-y-1">
                   {warnings.slice(0, 8).map((w) => (
@@ -184,10 +278,21 @@ export default function NarrationImportModal({
                     onClick={() => setStep('input')}
                     className="text-xs font-semibold px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-50"
                   >
-                    Edit transcript
+                    Back to input
                   </button>
                 </div>
               </div>
+
+              {transcript && (
+                <details className="text-sm">
+                  <summary className="cursor-pointer font-semibold text-gray-600">
+                    View transcript ({transcriptionSource === 'whisper' ? 'Whisper' : 'pasted'})
+                  </summary>
+                  <pre className="mt-2 p-3 bg-slate-50 border border-gray-200 rounded-md text-xs font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
+                    {transcript}
+                  </pre>
+                </details>
+              )}
 
               {suggestions.length === 0 ? (
                 <p className="text-center text-gray-500 py-8">
@@ -254,10 +359,6 @@ export default function NarrationImportModal({
                   </table>
                 </div>
               )}
-
-              <p className="text-xs text-gray-400">
-                Stub parser (PR1) — rule-based mapping. Whisper + LLM normalization coming next.
-              </p>
             </>
           )}
         </div>
@@ -274,10 +375,16 @@ export default function NarrationImportModal({
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={!transcript.trim() || loading}
+              disabled={!canGenerate || loading}
               className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2 rounded-md font-semibold text-sm"
             >
-              {loading ? 'Generating…' : 'Generate suggestions'}
+              {loading
+                ? inputMode === 'audio'
+                  ? 'Transcribing…'
+                  : 'Generating…'
+                : inputMode === 'audio'
+                  ? 'Transcribe & suggest'
+                  : 'Generate suggestions'}
             </button>
           ) : (
             <button
@@ -291,6 +398,8 @@ export default function NarrationImportModal({
           )}
         </div>
       </div>
+
+      {cheatSheetOpen && <NarrationCheatSheetModal onClose={() => setCheatSheetOpen(false)} />}
     </div>
   );
 }

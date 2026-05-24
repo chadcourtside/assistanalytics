@@ -4,6 +4,7 @@ import {
   normalizeSpeechToDescription,
   processNarrationTranscript,
   mergeSuggestionsIntoPlayByPlay,
+  whisperSegmentsToTranscript,
 } from './narrationImport.js';
 
 describe('narrationImport', () => {
@@ -31,6 +32,10 @@ assist`;
       'Make 2 PT, Paint touch'
     );
     expect(normalizeSpeechToDescription('live ball turnover').description).toBe('LB TOV');
+    expect(normalizeSpeechToDescription('hockey assist').description).toBe('2nd Assist');
+    expect(normalizeSpeechToDescription('db tov').description).toBe('TOV');
+    expect(normalizeSpeechToDescription('deflection').description).toBe('Def');
+    expect(normalizeSpeechToDescription('scr ast').description).toBe('Screen assist');
   });
 
   it('builds suggestions from transcript', () => {
@@ -44,5 +49,15 @@ assist`;
   it('merges accepted lines into play-by-play', () => {
     const merged = mergeSuggestionsIntoPlayByPlay('1:00 Assist', ['3:50 Make 2 PT']);
     expect(merged).toBe('1:00 Assist\n3:50 Make 2 PT');
+  });
+
+  it('converts Whisper segments to WebVTT-style transcript', () => {
+    const text = whisperSegmentsToTranscript([
+      { start: 230, end: 232, text: ' make two paint touch' },
+      { start: 374, end: 376, text: ' assist' },
+    ]);
+    expect(text).toContain('3:50 -->');
+    expect(text).toContain('make two paint touch');
+    expect(text).toContain('6:14 -->');
   });
 });

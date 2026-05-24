@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import StatGlossaryModal from './StatGlossaryModal';
 
-export default function StatGlossaryButton() {
+export default function StatGlossaryButton({ initialTab = 'stats' }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -10,11 +10,13 @@ export default function StatGlossaryButton() {
         type="button"
         onClick={() => setOpen(true)}
         className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-2 rounded-md font-semibold whitespace-nowrap"
-        title="Open stat definitions"
+        title={initialTab === 'narration' ? 'Open narration cheat sheet' : 'Open stat definitions'}
       >
-        Stat Guide
+        {initialTab === 'narration' ? 'Narration guide' : 'Stat Guide'}
       </button>
-      {open && <StatGlossaryModal onClose={() => setOpen(false)} />}
+      {open && (
+        <StatGlossaryModal initialTab={initialTab} onClose={() => setOpen(false)} />
+      )}
     </>
   );
 }
