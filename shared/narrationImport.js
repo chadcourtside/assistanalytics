@@ -4,7 +4,8 @@
  */
 
 /** @typedef {{ startSeconds: number, time: string, text: string }} TranscriptSegment */
-/** @typedef {{ id: string, time: string, line: string, sourceText: string, confidence: 'high'|'medium'|'low', accepted: boolean, parseable: boolean }} NarrationSuggestion */
+/** @typedef {'uncertain' | 'reviewLater' | 'corrected'} NarrationSuggestionFlag */
+/** @typedef {{ id: string, time: string, line: string, sourceText: string, confidence: 'high'|'medium'|'low', accepted: boolean, parseable: boolean, flags?: NarrationSuggestionFlag[], correctionNote?: string }} NarrationSuggestion */
 
 function padTime(mins, secs) {
   return `${mins}:${String(secs).padStart(2, '0')}`;
@@ -182,6 +183,82 @@ export function normalizeSpeechToDescription(rawText) {
   return { description: parts.join(', '), confidence, mapped: true };
 }
 
+/** Strip correction phrasing and negation ("… no missed two") to get the intended tag phrase. */
+export function extractCorrectionPayload(rawText) {
+  let t = (rawText || '').trim();
+  t = t.replace(/^(correction|correct|actually)\b[\s.:,-]*/i, '').trim();
+  t = t.replace(/^(?:the\s+)?last\s+event\s+was\s+/i, '').trim();
+  t = t.replace(/^(?:that|it)\s+was\s+/i, '').trim();
+
+  const noMatch = t.match(/\bno[,.]?\s+(.+)$/i);
+  if (noMatch) t = noMatch[1].trim();
+
+  return t.replace(/^[,.\s-]+/, '').trim();
+}
+
+/**
+ * Detect sideline control phrases (corrections, undo, flags).
+ * @returns {{ type: 'delete_last'|'mark_uncertain'|'review_later'|'correction'|'event', payload?: string }}
+ */
+export function detectNarrationCommand(rawText) {
+  const text = (rawText || '').trim();
+  const lower = text.toLowerCase();
+
+  if (/^(scratch that|ignore last|delete last|undo last|cancel last)\b/.test(lower)) {
+    return { type: 'delete_last' };
+  }
+  if (/^(mark uncertain|uncertain|not sure)\b/.test(lower)) {
+    return { type: 'mark_uncertain' };
+  }
+  if (/^(review later|check later|flag for review)\b/.test(lower)) {
+    return { type: 'review_later' };
+  }
+  if (/^(correction|correct|actually)\b/i.test(text)) {
+    return { type: 'correction', payload: extractCorrectionPayload(text) };
+  }
+  return { type: 'event' };
+}
+
+function defaultAccepted(suggestion) {
+  const flags = suggestion.flags || [];
+  if (flags.includes('uncertain') || flags.includes('reviewLater')) return false;
+  return suggestion.confidence !== 'low';
+}
+
+function pushEventSuggestion(suggestions, seen, segment, sourceText, description, confidence, extra = {}) {
+  const line = formatPlayByPlayLine(segment.time, description);
+  const dedupeKey = `${segment.time}|${description.toLowerCase()}`;
+  if (seen.has(dedupeKey)) return false;
+  seen.add(dedupeKey);
+
+  const suggestion = {
+    id: nextSuggestionId(),
+    time: segment.time,
+    line,
+    sourceText,
+    confidence,
+    accepted: true,
+    parseable: isParseablePlayLine(line),
+    flags: [],
+    ...extra,
+  };
+  suggestion.accepted = defaultAccepted(suggestion);
+  suggestions.push(suggestion);
+  return true;
+}
+
+function getLastSuggestion(suggestions) {
+  return suggestions.length > 0 ? suggestions[suggestions.length - 1] : null;
+}
+
+function applyFlagToLast(suggestions, flag) {
+  const last = getLastSuggestion(suggestions);
+  if (!last) return false;
+  last.flags = [...new Set([...(last.flags || []), flag])];
+  last.accepted = defaultAccepted(last);
+  return true;
+}
+
 export function formatPlayByPlayLine(time, description) {
   const desc = (description || '').trim();
   if (!desc) return '';
@@ -223,26 +300,69 @@ export function buildNarrationSuggestions(segments, { playerName = '' } = {}) {
     const sourceText = segment.text.trim();
     if (!sourceText) continue;
 
+    const command = detectNarrationCommand(sourceText);
+
+    if (command.type === 'delete_last') {
+      const removed = suggestions.pop();
+      if (removed) {
+        seen.delete(`${removed.time}|${(removed.line.split(' ').slice(1).join(' ') || '').toLowerCase()}`);
+        warnings.push(`Removed previous event after "${sourceText}"`);
+      } else {
+        warnings.push(`Nothing to remove for "${sourceText}"`);
+      }
+      continue;
+    }
+
+    if (command.type === 'mark_uncertain') {
+      if (applyFlagToLast(suggestions, 'uncertain')) {
+        warnings.push(`Marked previous event uncertain (${sourceText})`);
+      } else {
+        warnings.push(`No previous event to mark uncertain (${sourceText})`);
+      }
+      continue;
+    }
+
+    if (command.type === 'review_later') {
+      if (applyFlagToLast(suggestions, 'reviewLater')) {
+        warnings.push(`Flagged previous event for review (${sourceText})`);
+      } else {
+        warnings.push(`No previous event to flag (${sourceText})`);
+      }
+      continue;
+    }
+
+    if (command.type === 'correction') {
+      const last = getLastSuggestion(suggestions);
+      if (!last) {
+        warnings.push(`Correction with no prior event: "${sourceText}"`);
+        continue;
+      }
+      const { description, confidence, mapped } = normalizeSpeechToDescription(command.payload || '');
+      if (!mapped || !description) {
+        warnings.push(`Could not parse correction: "${sourceText}"`);
+        continue;
+      }
+      const previousLine = last.line;
+      last.line = formatPlayByPlayLine(last.time, description);
+      last.confidence = confidence;
+      last.parseable = isParseablePlayLine(last.line);
+      last.flags = [...new Set([...(last.flags || []), 'corrected'])];
+      last.correctionNote = sourceText;
+      last.sourceText = `${last.sourceText} → corrected: ${command.payload}`;
+      last.accepted = defaultAccepted(last);
+      seen.delete(`${last.time}|${(previousLine.split(' ').slice(1).join(' ') || '').toLowerCase()}`);
+      seen.add(`${last.time}|${description.toLowerCase()}`);
+      warnings.push(`Corrected previous event to "${description}"`);
+      continue;
+    }
+
     const { description, confidence, mapped } = normalizeSpeechToDescription(sourceText);
     if (!mapped || !description) {
       warnings.push(`Skipped (unrecognized): "${sourceText}"`);
       continue;
     }
 
-    const line = formatPlayByPlayLine(segment.time, description);
-    const dedupeKey = `${segment.time}|${description.toLowerCase()}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-
-    suggestions.push({
-      id: nextSuggestionId(),
-      time: segment.time,
-      line,
-      sourceText,
-      confidence,
-      accepted: confidence !== 'low',
-      parseable: isParseablePlayLine(line),
-    });
+    pushEventSuggestion(suggestions, seen, segment, sourceText, description, confidence);
   }
 
   if (segments.length === 0) {

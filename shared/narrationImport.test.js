@@ -5,6 +5,9 @@ import {
   processNarrationTranscript,
   mergeSuggestionsIntoPlayByPlay,
   whisperSegmentsToTranscript,
+  extractCorrectionPayload,
+  detectNarrationCommand,
+  buildNarrationSuggestions,
 } from './narrationImport.js';
 
 describe('narrationImport', () => {
@@ -59,5 +62,31 @@ assist`;
     expect(text).toContain('3:50 -->');
     expect(text).toContain('make two paint touch');
     expect(text).toContain('6:14 -->');
+  });
+
+  it('detects correction commands', () => {
+    expect(detectNarrationCommand('scratch that').type).toBe('delete_last');
+    expect(detectNarrationCommand('mark uncertain').type).toBe('mark_uncertain');
+    expect(detectNarrationCommand('correction missed two').type).toBe('correction');
+    expect(
+      extractCorrectionPayload('correction. last event was missed three, no missed two')
+    ).toBe('missed two');
+  });
+
+  it('applies correction, uncertain, and delete commands to suggestions', () => {
+    const segments = parseTranscriptToSegments(`3:30 make three
+3:32 correction missed two
+3:40 assist
+3:42 mark uncertain
+3:50 paint touch
+3:52 scratch that`);
+
+    const { suggestions } = buildNarrationSuggestions(segments);
+    expect(suggestions).toHaveLength(2);
+    expect(suggestions[0].line).toBe('3:30 Miss 2 PT');
+    expect(suggestions[0].flags).toContain('corrected');
+    expect(suggestions[1].line).toBe('3:40 Assist');
+    expect(suggestions[1].flags).toContain('uncertain');
+    expect(suggestions[1].accepted).toBe(false);
   });
 });

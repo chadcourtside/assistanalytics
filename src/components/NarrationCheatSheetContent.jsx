@@ -66,14 +66,13 @@ export default function NarrationCheatSheetContent({ compact = false }) {
       <section className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm">
         <p className="font-semibold text-gray-800 mb-2">Example narration (~30 seconds)</p>
         <pre className="font-mono text-xs text-gray-700 whitespace-pre-wrap">
-          {`paint touch
-make two paint touch
+          {`make three
+correction missed two
 assist
-make three
-live ball turnover
-def reb
-steal
-deflection`}
+mark uncertain
+paint touch
+scratch that
+def reb`}
         </pre>
       </section>
     </div>

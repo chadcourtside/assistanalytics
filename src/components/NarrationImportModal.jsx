@@ -26,6 +26,34 @@ const CONFIDENCE_STYLES = {
   low: 'bg-slate-100 text-slate-600',
 };
 
+const FLAG_STYLES = {
+  corrected: 'bg-sky-100 text-sky-800',
+  uncertain: 'bg-orange-100 text-orange-800',
+  reviewLater: 'bg-fuchsia-100 text-fuchsia-800',
+};
+
+const FLAG_LABELS = {
+  corrected: 'Corrected',
+  uncertain: 'Uncertain',
+  reviewLater: 'Review later',
+};
+
+function SuggestionFlags({ flags = [] }) {
+  if (!flags.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {flags.map((flag) => (
+        <span
+          key={flag}
+          className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${FLAG_STYLES[flag] || 'bg-gray-100 text-gray-600'}`}
+        >
+          {FLAG_LABELS[flag] || flag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function NarrationImportModal({
   playerName = '',
   videoUrl = '',
@@ -103,7 +131,10 @@ export default function NarrationImportModal({
     setSuggestions((prev) =>
       prev.map((s) => ({
         ...s,
-        accepted: s.confidence === 'high' || s.confidence === 'medium',
+        accepted:
+          (s.confidence === 'high' || s.confidence === 'medium') &&
+          !(s.flags || []).includes('uncertain') &&
+          !(s.flags || []).includes('reviewLater'),
       }))
     );
   };
@@ -158,8 +189,9 @@ export default function NarrationImportModal({
                 </div>
                 <p>
                   Say short tags at each moment: &quot;make two&quot;, &quot;paint touch&quot;,
-                  &quot;assist&quot;, &quot;live ball turnover&quot;, &quot;deflection&quot;,
-                  &quot;DB TOV&quot;. Timestamps come from the recording.
+                  &quot;assist&quot;, &quot;live ball turnover&quot;. Fix mistakes with
+                  &quot;correction missed two&quot;, &quot;scratch that&quot;, or &quot;mark
+                  uncertain&quot;.
                 </p>
               </div>
 
@@ -330,6 +362,7 @@ export default function NarrationImportModal({
                               onChange={(e) => updateLine(s.id, e.target.value)}
                               className="w-full text-sm px-2 py-1 border border-gray-300 rounded font-mono"
                             />
+                            <SuggestionFlags flags={s.flags} />
                           </td>
                           <td className="px-3 py-2 align-top hidden md:table-cell text-gray-500 text-xs">
                             {s.sourceText}

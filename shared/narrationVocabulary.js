@@ -8,6 +8,7 @@ export const NARRATION_TIPS = [
   'You do not need to say the game clock; timestamps come from the recording.',
   'Combine related tags in one breath: “make two paint touch”, “assist paint touch”.',
   'Only narrate your player’s events unless you add a Note.',
+  'Fix mistakes without stopping: “correction missed two”, “scratch that”, “mark uncertain”.',
 ];
 
 export const NARRATION_AVOID = [
@@ -86,6 +87,25 @@ export const NARRATION_VOCAB_GROUPS = [
         say: ['note: …'],
         savesAs: 'Note: …',
         hint: 'Custom timestamped observation — not a box-score stat',
+      },
+    ],
+  },
+  {
+    label: 'Corrections & flags (no new play line)',
+    entries: [
+      {
+        say: ['correction …', 'correct …', 'actually …'],
+        savesAs: '(updates previous event)',
+        hint: 'e.g. “correction missed two” or “last event was make three, no missed two”',
+      },
+      { say: ['scratch that', 'ignore last', 'delete last', 'undo last'], savesAs: '(removes previous)' },
+      {
+        say: ['mark uncertain', 'uncertain', 'not sure'],
+        savesAs: '(flags previous — review unchecked)',
+      },
+      {
+        say: ['review later', 'check later', 'flag for review'],
+        savesAs: '(flags previous for follow-up)',
       },
     ],
   },
