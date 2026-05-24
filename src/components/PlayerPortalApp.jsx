@@ -12,8 +12,16 @@ import StatGlossaryButton from './StatGlossaryButton';
 
 const TABS = ['My Stats', 'Dashboard', 'Benchmarks', 'Game Logs', 'Film Room', 'Teammates'];
 
-export default function PlayerPortalApp({ initialToken }) {
-  const { status, payload, teamName, error, reload, signOut } = usePlayerPortal(initialToken);
+export default function PlayerPortalApp({
+  initialToken,
+  previewPayload = null,
+  previewTeamName = '',
+  onExitPreview,
+}) {
+  const { status, payload, teamName, error, reload, signOut, isPreview } = usePlayerPortal(
+    initialToken,
+    { previewPayload, previewTeamName, onExitPreview }
+  );
   const [activeTab, setActiveTab] = useState('My Stats');
   const [filmGameId, setFilmGameId] = useState(null);
   const [filmClipId, setFilmClipId] = useState(null);
@@ -118,14 +126,16 @@ export default function PlayerPortalApp({ initialToken }) {
               onClick={signOut}
               className="text-sm border border-slate-600 text-slate-200 hover:bg-slate-800 px-3 py-2 rounded-md font-semibold whitespace-nowrap"
             >
-              Sign out
+              {isPreview ? 'Exit preview' : 'Sign out'}
             </button>
           </div>
         </div>
       </header>
 
-      <div className="bg-emerald-50 border-b border-emerald-200 text-emerald-900 text-sm text-center py-2 px-4">
-        Player portal — your stats, trends, and film. Teammates show box scores only.
+      <div className={`border-b text-sm text-center py-2 px-4 ${isPreview ? 'bg-violet-50 border-violet-200 text-violet-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'}`}>
+        {isPreview
+          ? 'Debug player portal preview — scoped to the selected player from your roster.'
+          : 'Player portal — your stats, trends, and film. Teammates show box scores only.'}
       </div>
 
       <nav className="bg-white border-b border-gray-200 px-4 md:px-8 no-print sticky top-0 z-10 shadow-sm">

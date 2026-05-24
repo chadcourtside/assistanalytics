@@ -18,6 +18,9 @@ import AuthGate from './components/AuthGate';
 import SyncStatus from './components/SyncStatus';
 import TeamSettingsModal from './components/TeamSettingsModal';
 import EditPlayerModal from './components/EditPlayerModal';
+import DebugViewBanner, { DebugViewSwitcher } from './components/DebugViewBanner';
+import { buildPlayerPortalPayload } from '../shared/playerPortalCore.js';
+import { isDebugPreviewActive } from './utils/debugAccess';
 
 const TABS = ['Roster', 'Player', 'Dashboard', 'Benchmarks', 'Game Logs', 'Smart Film Room'];
 
@@ -44,6 +47,10 @@ function CoachApp() {
     activePlayerGames,
     activeBenchmarkSet,
     auth,
+    effectiveAuth,
+    isDebugAdmin,
+    debugView,
+    setDebugView,
     canEdit,
     syncStatus,
     syncError,
@@ -122,27 +129,103 @@ function CoachApp() {
     if (player) setEditingPlayer(player);
   };
 
-  const showAuthGate =
-    auth.status === 'unauthed' ||
-    auth.status === 'needs_team' ||
-    auth.status === 'loading' ||
-    auth.status === 'offline_api';
+  const exitDebugPreview = () => setDebugView('actual');
 
-  if (showAuthGate && auth.status !== 'local') {
+  const debugSwitcher = isDebugAdmin ? (
+    <DebugViewSwitcher debugView={debugView} onChange={setDebugView} compact />
+  ) : null;
+
+  if (isDebugAdmin && debugView === 'player') {
+    const previewPlayerId = state.activePlayerId;
+    const preview = previewPlayerId
+      ? buildPlayerPortalPayload(state, previewPlayerId)
+      : { error: 'Select a player from the roster first.' };
+
+    if (preview.error) {
+      return (
+        <div className="min-h-screen flex flex-col bg-slate-100">
+          <DebugViewBanner
+            debugView={debugView}
+            realRole={auth.team?.role}
+            onExitPreview={exitDebugPreview}
+            switcher={debugSwitcher}
+          />
+          <div className="flex-grow flex items-center justify-center p-6">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm max-w-md w-full p-6 text-center space-y-3">
+              <h1 className="text-lg font-bold text-gray-800">Player portal preview</h1>
+              <p className="text-sm text-gray-600">{preview.error}</p>
+              <p className="text-xs text-gray-400">
+                Choose a player in the header dropdown, then switch back to Player portal.
+              </p>
+              <button
+                type="button"
+                onClick={exitDebugPreview}
+                className="bg-violet-700 hover:bg-violet-800 text-white px-4 py-2 rounded-md text-sm font-semibold"
+              >
+                Exit preview
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <AuthGate
-        auth={auth}
-        onSignup={signup}
-        onLogin={login}
-        onCreateTeam={createTeam}
-        onJoinTeam={joinTeam}
-        onUseLocal={useLocalMode}
-      />
+      <>
+        <DebugViewBanner
+          debugView={debugView}
+          realRole={auth.team?.role}
+          onExitPreview={exitDebugPreview}
+          switcher={debugSwitcher}
+        />
+        <PlayerPortalApp
+          previewPayload={preview}
+          previewTeamName={auth.team?.name || ''}
+          onExitPreview={exitDebugPreview}
+        />
+      </>
+    );
+  }
+
+  const showAuthGate =
+    effectiveAuth.status === 'unauthed' ||
+    effectiveAuth.status === 'needs_team' ||
+    effectiveAuth.status === 'loading' ||
+    effectiveAuth.status === 'offline_api';
+
+  if (showAuthGate && effectiveAuth.status !== 'local') {
+    return (
+      <>
+        {isDebugPreviewActive(debugView) && (
+          <DebugViewBanner
+            debugView={debugView}
+            realRole={auth.team?.role}
+            onExitPreview={exitDebugPreview}
+            switcher={debugSwitcher}
+          />
+        )}
+        <AuthGate
+          auth={effectiveAuth}
+          onSignup={signup}
+          onLogin={login}
+          onCreateTeam={createTeam}
+          onJoinTeam={joinTeam}
+          onUseLocal={useLocalMode}
+        />
+      </>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col">
+      {isDebugPreviewActive(debugView) && (
+        <DebugViewBanner
+          debugView={debugView}
+          realRole={auth.team?.role}
+          onExitPreview={exitDebugPreview}
+          switcher={debugSwitcher}
+        />
+      )}
       <header className="bg-slate-900 text-white py-6 px-4 md:px-8 shadow-md no-print">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -164,7 +247,10 @@ function CoachApp() {
               onLogout={logout}
             />
             <div className="flex items-center gap-3 relative">
-            {auth.status === 'authed' && auth.team && (
+            {isDebugAdmin && (
+              <DebugViewSwitcher debugView={debugView} onChange={setDebugView} variant="header" />
+            )}
+            {effectiveAuth.status === 'authed' && effectiveAuth.team && (
               <button
                 type="button"
                 onClick={() => setTeamSettingsOpen(true)}
@@ -208,7 +294,7 @@ function CoachApp() {
         onDismiss={snoozeBackupReminder}
       />
 
-      {auth.team?.role === 'viewer' && (
+      {effectiveAuth.team?.role === 'viewer' && (
         <div className="bg-blue-50 border-b border-blue-200 text-blue-900 text-sm text-center py-2 px-4">
           View-only team access — contact your coach to log stats.
         </div>
@@ -333,9 +419,9 @@ function CoachApp() {
         />
       )}
 
-      {teamSettingsOpen && auth.status === 'authed' && (
+      {teamSettingsOpen && effectiveAuth.status === 'authed' && (
         <TeamSettingsModal
-          auth={auth}
+          auth={effectiveAuth}
           onClose={() => setTeamSettingsOpen(false)}
           onMembershipChanged={refreshSession}
         />

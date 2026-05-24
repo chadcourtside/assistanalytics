@@ -28,6 +28,8 @@ import {
 import { cloudPayloadToState, stateToCloudPayload } from '../utils/cloudState';
 import { fetchCloudState, saveCloudState } from '../api/cloudApi';
 import { useAuth } from './useAuth';
+import { useDebugView } from './useDebugView';
+import { applyDebugView } from '../utils/debugAccess';
 import { canEditTeamData } from '../utils/accessControl';
 import { normalizeTeamList } from '../utils/playerTeams';
 
@@ -61,6 +63,13 @@ export function useAppState() {
     useLocalMode,
   } = useAuth();
 
+  const { isDebugAdmin, debugView, setDebugView } = useDebugView(auth.user);
+
+  const effectiveAuth = useMemo(
+    () => applyDebugView(auth, debugView),
+    [auth, debugView]
+  );
+
   const [state, setState] = useState(loadLocalState);
   const [syncStatus, setSyncStatus] = useState(() => (readSyncQueue() ? 'pending' : 'idle'));
   const [syncError, setSyncError] = useState(null);
@@ -76,7 +85,7 @@ export function useAppState() {
 
   stateRef.current = state;
 
-  const canEdit = useMemo(() => canEditTeamData(auth), [auth]);
+  const canEdit = useMemo(() => canEditTeamData(effectiveAuth), [effectiveAuth]);
 
   const pushCloudState = useCallback(async (nextState, { force = false } = {}) => {
     if (auth.status !== 'authed') return false;
@@ -608,6 +617,10 @@ export function useAppState() {
     activePlayerGames,
     activeBenchmarkSet,
     auth,
+    effectiveAuth,
+    isDebugAdmin,
+    debugView,
+    setDebugView,
     canEdit,
     syncStatus,
     syncError,

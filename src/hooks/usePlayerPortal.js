@@ -6,11 +6,18 @@ import {
 } from '../utils/playerPortal.js';
 import { useCallback, useEffect, useState } from 'react';
 
-export function usePlayerPortal(initialToken) {
-  const [token, setToken] = useState(() => (initialToken || '').trim());
-  const [status, setStatus] = useState('loading');
-  const [payload, setPayload] = useState(null);
-  const [teamName, setTeamName] = useState('');
+export function usePlayerPortal(initialToken, options = {}) {
+  const {
+    previewPayload = null,
+    previewTeamName = '',
+    onExitPreview,
+  } = options;
+  const isPreview = Boolean(previewPayload);
+
+  const [token, setToken] = useState(() => (isPreview ? '' : (initialToken || '').trim()));
+  const [status, setStatus] = useState(() => (isPreview ? 'ready' : 'loading'));
+  const [payload, setPayload] = useState(() => previewPayload);
+  const [teamName, setTeamName] = useState(() => previewTeamName);
   const [error, setError] = useState('');
 
   const load = useCallback(async (nextToken) => {
@@ -41,16 +48,34 @@ export function usePlayerPortal(initialToken) {
   }, []);
 
   useEffect(() => {
+    if (isPreview) return;
     const urlToken = readPlayerTokenFromUrl();
     load(urlToken || initialToken);
-  }, [initialToken, load]);
+  }, [initialToken, load, isPreview]);
 
   const signOut = useCallback(() => {
+    if (isPreview) {
+      onExitPreview?.();
+      return;
+    }
     writeStoredPlayerToken('');
     setToken('');
     setPayload(null);
     setStatus('signed_out');
-  }, []);
+  }, [isPreview, onExitPreview]);
+
+  if (isPreview) {
+    return {
+      token: '',
+      status: 'ready',
+      payload: previewPayload,
+      teamName: previewTeamName,
+      error: '',
+      reload: () => {},
+      signOut,
+      isPreview: true,
+    };
+  }
 
   return {
     token,
@@ -60,5 +85,6 @@ export function usePlayerPortal(initialToken) {
     error,
     reload: () => load(token),
     signOut,
+    isPreview: false,
   };
 }
