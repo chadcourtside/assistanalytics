@@ -32,6 +32,7 @@ import { useDebugView } from './useDebugView';
 import { applyDebugView } from '../utils/debugAccess';
 import { canEditTeamData } from '../utils/accessControl';
 import { normalizeTeamList } from '../utils/playerTeams';
+import { readAuthTokenFromUrl, clearAuthParamsFromUrl } from '../utils/authUrl';
 
 const CLOUD_SAVE_DELAY_MS = 1500;
 const SESSION_REFRESH_MS = 30_000;
@@ -61,6 +62,10 @@ export function useAppState() {
     createTeam,
     joinTeam,
     useLocalMode,
+    requestMagicLink,
+    requestPasswordReset,
+    resetPassword,
+    consumeAuthToken,
   } = useAuth();
 
   const { isDebugAdmin, debugView, setDebugView } = useDebugView(auth.user);
@@ -268,6 +273,13 @@ export function useAppState() {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [refreshSession, useLocalMode]);
+
+  useEffect(() => {
+    const authToken = readAuthTokenFromUrl();
+    if (!authToken) return;
+    clearAuthParamsFromUrl();
+    consumeAuthToken(authToken);
+  }, [consumeAuthToken]);
 
   useEffect(() => {
     if (auth.status !== 'authed' || !auth.team?.id) return;
@@ -633,6 +645,10 @@ export function useAppState() {
     createTeam,
     joinTeam,
     useLocalMode,
+    requestMagicLink,
+    requestPasswordReset,
+    resetPassword,
+    consumeAuthToken,
     acceptCloudConflict,
     retryCloudSync,
     setActivePlayerId,

@@ -13,6 +13,7 @@ export default function DashboardTab({
   games,
   totalGameCount,
   gameScope,
+  meta,
   onGameScopeChange,
   onOpenFilm,
 }) {
@@ -32,7 +33,7 @@ export default function DashboardTab({
         </p>
         {totalGameCount > 0 && gameScope && onGameScopeChange && (
           <div className="flex justify-center">
-            <GameScopeFilter player={player} scope={gameScope} onChange={onGameScopeChange} />
+            <GameScopeFilter player={player} meta={meta} scope={gameScope} onChange={onGameScopeChange} />
           </div>
         )}
         {totalGameCount === 0 && (
@@ -54,7 +55,7 @@ export default function DashboardTab({
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
           {gameScope && onGameScopeChange && (
-            <GameScopeFilter player={player} scope={gameScope} onChange={onGameScopeChange} />
+            <GameScopeFilter player={player} meta={meta} scope={gameScope} onChange={onGameScopeChange} />
           )}
           <button
             type="button"

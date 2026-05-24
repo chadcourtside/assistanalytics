@@ -54,6 +54,7 @@ export function toBoxScoreGame(game) {
     competition: game.competition,
     season: game.season,
     gameType: game.gameType,
+    team: game.team,
     stats: normalizeGameStats(game.stats),
   };
 }
@@ -69,6 +70,7 @@ export function toPlayerGame(game) {
     competition: game.competition,
     season: game.season,
     gameType: game.gameType,
+    team: game.team,
     videoUrl: game.videoUrl,
     stats: normalizeGameStats(game.stats),
     playByPlay: game.playByPlay ?? [],
@@ -125,5 +127,11 @@ export function buildPlayerPortalPayload(state, playerId) {
     benchmarkSet,
     teammates,
     activePlayerId: playerId,
+    seasonMeta: {
+      currentSeason: state.meta?.currentSeason || undefined,
+      archivedSeasons: Array.isArray(state.meta?.archivedSeasons)
+        ? state.meta.archivedSeasons
+        : [],
+    },
   };
 }

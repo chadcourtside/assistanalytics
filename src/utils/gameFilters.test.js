@@ -9,6 +9,16 @@ describe('gameFilters', () => {
     expect(getGameSeasonLabel({ season: '' }, player)).toBe('2025-26');
   });
 
+  it('filters by workspace current season', () => {
+    const meta = { currentSeason: '2025-26' };
+    const games = [
+      { id: '1', season: '2025-26', gameType: 'game' },
+      { id: '2', season: '2024-25', gameType: 'game' },
+    ];
+    const filtered = filterGamesByScope(games, player, { seasonFilter: 'current', gameTypeFilter: 'all' }, meta);
+    expect(filtered.map((g) => g.id)).toEqual(['1']);
+  });
+
   it('filters by player current season', () => {
     const games = [
       { id: '1', season: '2025-26', gameType: 'game' },

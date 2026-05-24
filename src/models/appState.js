@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export const STORAGE_KEY = 'assistanalytics-state';
 export const LEGACY_GAMES_KEY = 'assistanalytics-games';

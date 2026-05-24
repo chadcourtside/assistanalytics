@@ -26,6 +26,13 @@ import {
   revokePlayerLink,
 } from '../_lib/playerLinks.js';
 import { buildPlayerPortalPayload } from '../../shared/playerPortalCore.js';
+import { sendEmail, getAppBaseUrl } from '../_lib/email.js';
+import {
+  consumeAuthToken,
+  createAuthToken,
+  getUserAuthProfile,
+  resetPasswordWithToken,
+} from '../_lib/authTokens.js';
 
 function routeKey(method, segments) {
   return `${method}:${segments.join('/')}`;
@@ -387,11 +394,82 @@ async function handlePlayersLinkDelete(request, env) {
   return jsonResponse({ ok: true });
 }
 
+const GENERIC_AUTH_MESSAGE = 'If an account exists for that email, we sent a link.';
+
+async function findUserByEmail(env, email) {
+  const normalized = (email || '').trim().toLowerCase();
+  if (!normalized) return null;
+  return env.DB.prepare('SELECT id, email FROM users WHERE email = ?').bind(normalized).first();
+}
+
+async function handleAuthMagicLink(request, env) {
+  const body = await readJson(request);
+  const user = await findUserByEmail(env, body?.email);
+  if (user) {
+    const { token } = await createAuthToken(env, user.id, 'login');
+    const baseUrl = getAppBaseUrl(request, env);
+    const link = `${baseUrl}/?authToken=${token}`;
+    await sendEmail(env, {
+      to: user.email,
+      subject: 'Your Assist Analytics sign-in link',
+      text: `Sign in to Assist Analytics: ${link}\n\nThis link expires in 15 minutes.`,
+      html: `<p><a href="${link}">Sign in to Assist Analytics</a></p><p>This link expires in 15 minutes.</p>`,
+    });
+  }
+  return jsonResponse({ ok: true, message: GENERIC_AUTH_MESSAGE });
+}
+
+async function handleAuthForgotPassword(request, env) {
+  const body = await readJson(request);
+  const user = await findUserByEmail(env, body?.email);
+  if (user) {
+    const { token } = await createAuthToken(env, user.id, 'reset_password');
+    const baseUrl = getAppBaseUrl(request, env);
+    const link = `${baseUrl}/?resetToken=${token}`;
+    await sendEmail(env, {
+      to: user.email,
+      subject: 'Reset your Assist Analytics password',
+      text: `Reset your password: ${link}\n\nThis link expires in 1 hour.`,
+      html: `<p><a href="${link}">Reset your password</a></p><p>This link expires in 1 hour.</p>`,
+    });
+  }
+  return jsonResponse({ ok: true, message: GENERIC_AUTH_MESSAGE });
+}
+
+async function handleAuthConsume(request, env) {
+  const body = await readJson(request);
+  const resolved = await consumeAuthToken(env, body?.token);
+  if (resolved.error) return errorResponse(resolved.error, resolved.status || 400);
+  if (resolved.purpose !== 'login') return errorResponse('Invalid sign-in link', 400);
+
+  const profile = await getUserAuthProfile(env, resolved.userId);
+  if (profile.error) return errorResponse(profile.error, profile.status || 500);
+
+  const response = await authResponse(request, env, profile);
+  const headers = response.cookie ? { 'Set-Cookie': response.cookie } : {};
+  return jsonResponse(response.body, 200, headers);
+}
+
+async function handleAuthResetPassword(request, env) {
+  const body = await readJson(request);
+  const result = await resetPasswordWithToken(env, body?.token, body?.password);
+  if (result.error) return errorResponse(result.error, result.status || 400);
+
+  const profile = await getUserAuthProfile(env, result.userId);
+  const response = await authResponse(request, env, profile);
+  const headers = response.cookie ? { 'Set-Cookie': response.cookie } : {};
+  return jsonResponse({ ok: true, ...response.body }, 200, headers);
+}
+
 const ROUTES = {
   'POST:auth/signup': handleAuthSignup,
   'POST:auth/login': handleAuthLogin,
   'POST:auth/logout': handleAuthLogout,
   'GET:auth/me': handleAuthMe,
+  'POST:auth/magic-link': handleAuthMagicLink,
+  'POST:auth/forgot-password': handleAuthForgotPassword,
+  'POST:auth/consume': handleAuthConsume,
+  'POST:auth/reset-password': handleAuthResetPassword,
   'POST:teams/create': handleTeamsCreate,
   'POST:teams/join': handleTeamsJoin,
   'GET:teams/members': handleTeamsMembersGet,

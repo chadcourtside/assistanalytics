@@ -58,6 +58,7 @@ export default function BenchmarksTab({
   games,
   totalGameCount,
   gameScope,
+  meta,
   onGameScopeChange,
   benchmarkSet,
   onSaveTargets,
@@ -135,6 +136,7 @@ export default function BenchmarksTab({
       {gameScope && onGameScopeChange && (
         <GameScopeFilter
           player={player}
+          meta={meta}
           scope={gameScope}
           onChange={onGameScopeChange}
           className="no-print"

@@ -72,16 +72,17 @@ export function playByPlayToText(playByPlay) {
   return playByPlay.join('\n');
 }
 
-export function gameToFormState(game) {
+export function gameToFormState(game, { defaultTeam = '', defaultSeason = '' } = {}) {
   if (!game) {
     return {
       date: new Date().toISOString().slice(0, 10),
       opponent: '',
       result: '',
       competition: '',
+      team: defaultTeam,
       videoUrl: '',
       gameType: GAME_TYPES.GAME,
-      season: '',
+      season: defaultSeason,
       stats: createEmptyStats(),
       playByPlayText: '',
       playerTakeaway: '',
@@ -93,24 +94,26 @@ export function gameToFormState(game) {
     opponent: game.opponent || '',
     result: game.result || '',
     competition: game.competition || '',
+    team: game.team || defaultTeam || '',
     videoUrl: game.videoUrl || '',
     gameType: normalizeGameType(game.gameType),
-    season: game.season || '',
+    season: game.season || defaultSeason || '',
     stats,
     playByPlayText: playByPlayToText(game.playByPlay),
     playerTakeaway: game.playerTakeaway || '',
   };
 }
 
-export function duplicateGameFormState(sourceGame) {
-  if (!sourceGame) return gameToFormState(null);
-  const base = gameToFormState(null);
+export function duplicateGameFormState(sourceGame, defaults = {}) {
+  if (!sourceGame) return gameToFormState(null, defaults);
+  const base = gameToFormState(null, defaults);
   return {
     ...base,
     opponent: sourceGame.opponent || '',
     competition: sourceGame.competition || '',
+    team: sourceGame.team || defaults.defaultTeam || '',
     gameType: normalizeGameType(sourceGame.gameType),
-    season: sourceGame.season || '',
+    season: sourceGame.season || defaults.defaultSeason || '',
     videoUrl: '',
     result: '',
     stats: createEmptyStats(),
@@ -155,6 +158,7 @@ export function buildGamePayload(form, stats) {
     opponent: form.opponent.trim(),
     result: form.result?.trim() || undefined,
     competition: form.competition?.trim() || undefined,
+    team: form.team?.trim() || undefined,
     videoUrl: form.videoUrl?.trim() || '',
     gameType: normalizeGameType(form.gameType),
     season: form.season?.trim() || undefined,

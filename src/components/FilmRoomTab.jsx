@@ -21,6 +21,7 @@ export default function FilmRoomTab({
   player,
   games,
   gameScope,
+  meta,
   onGameScopeChange,
   initialGameId = null,
   initialClipId = null,
@@ -168,7 +169,7 @@ export default function FilmRoomTab({
         <p className="text-sm">Add a game in Game Logs, adjust filters, or paste a YouTube link.</p>
         {gameScope && onGameScopeChange && (
           <div className="flex justify-center">
-            <GameScopeFilter player={player} scope={gameScope} onChange={onGameScopeChange} />
+            <GameScopeFilter player={player} meta={meta} scope={gameScope} onChange={onGameScopeChange} />
           </div>
         )}
       </div>
@@ -180,6 +181,7 @@ export default function FilmRoomTab({
       {gameScope && onGameScopeChange && (
         <GameScopeFilter
           player={player}
+          meta={meta}
           scope={gameScope}
           onChange={onGameScopeChange}
           className="no-print"

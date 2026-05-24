@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { formatGameTitle, formatGameSubtitle, normalizeGameStats } from '../utils/gameStats';
 import { duplicateGameFormState } from '../utils/gameForm';
+import { getPlayerTeams } from '../utils/playerTeams';
+import { getWorkspaceCurrentSeason } from '../utils/season';
 import { GAME_TYPE_LABELS } from '../constants/gameTypes';
 import { countReviewedClips } from '../utils/playerView';
 import GameFormModal from './GameFormModal';
@@ -9,6 +11,7 @@ import PlayByPlayList from './PlayByPlayList';
 export default function LogsTab({
   player,
   games,
+  meta,
   addGame,
   updateGame,
   deleteGame,
@@ -28,7 +31,12 @@ export default function LogsTab({
 
   const openDuplicate = (game) => {
     setEditingGame(null);
-    setFormSeed(duplicateGameFormState(game));
+    setFormSeed(
+      duplicateGameFormState(game, {
+        defaultTeam: game.team || getPlayerTeams(player)[0] || '',
+        defaultSeason: getWorkspaceCurrentSeason(meta) || player?.season || '',
+      })
+    );
     setModalMode('add');
   };
 
@@ -205,6 +213,8 @@ export default function LogsTab({
           mode={modalMode}
           game={editingGame}
           initialForm={formSeed}
+          player={player}
+          meta={meta}
           onSave={handleSave}
           onClose={closeModal}
         />

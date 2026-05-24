@@ -22,7 +22,24 @@ import DebugViewBanner, { DebugViewSwitcher } from './components/DebugViewBanner
 import { buildPlayerPortalPayload } from '../shared/playerPortalCore.js';
 import { isDebugPreviewActive } from './utils/debugAccess';
 
-const TABS = ['Roster', 'Player', 'Dashboard', 'Benchmarks', 'Game Logs', 'Smart Film Room'];
+import TeamNightTab from './components/TeamNightTab';
+import SeasonIndicator from './components/SeasonIndicator';
+import SeasonManageModal from './components/SeasonManageModal';
+import { isViewer } from './utils/accessControl';
+
+const COACH_TABS = [
+  'Roster',
+  'Player',
+  'Dashboard',
+  'Benchmarks',
+  'Game Logs',
+  'Team Night',
+  'Smart Film Room',
+];
+const PARENT_TABS = [
+  { id: 'Player', label: 'Focus & Film' },
+  { id: 'Dashboard', label: 'Dashboard' },
+];
 
 export default function App() {
   const [playerToken] = useState(() => readPlayerTokenFromUrl() || readStoredPlayerToken());
@@ -40,7 +57,8 @@ function CoachApp() {
   const [filmClipId, setFilmClipId] = useState(null);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
-  const [gameScope, setGameScope] = useState({ seasonFilter: 'all', gameTypeFilter: 'all' });
+  const [seasonManageOpen, setSeasonManageOpen] = useState(false);
+  const [gameScope, setGameScope] = useState({ seasonFilter: 'current', gameTypeFilter: 'all' });
   const {
     state,
     activePlayer,
@@ -63,6 +81,9 @@ function CoachApp() {
     createTeam,
     joinTeam,
     useLocalMode,
+    requestMagicLink,
+    requestPasswordReset,
+    resetPassword,
     acceptCloudConflict,
     retryCloudSync,
     setActivePlayerId,
@@ -85,14 +106,25 @@ function CoachApp() {
   useEffect(() => {
     setGameScope((prev) => ({
       ...prev,
-      seasonFilter: activePlayer?.season ? 'player' : 'all',
+      seasonFilter: state.meta?.currentSeason ? 'current' : activePlayer?.season ? 'player' : 'all',
     }));
-  }, [activePlayer?.id, activePlayer?.season]);
+  }, [activePlayer?.id, activePlayer?.season, state.meta?.currentSeason]);
+
+  const isParentView = isViewer(effectiveAuth);
+  const visibleTabs = isParentView
+    ? PARENT_TABS
+    : COACH_TABS.map((tab) => ({ id: tab, label: tab }));
+
+  useEffect(() => {
+    if (isParentView) {
+      setActiveTab('Dashboard');
+    }
+  }, [isParentView]);
 
   const scopedPlayerGames = useMemo(() => {
     if (!activePlayer) return [];
-    return filterGamesByScope(activePlayerGames, activePlayer, gameScope);
-  }, [activePlayerGames, activePlayer, gameScope]);
+    return filterGamesByScope(activePlayerGames, activePlayer, gameScope, state.meta);
+  }, [activePlayerGames, activePlayer, gameScope, state.meta]);
 
   const openFilmForGame = (game) => {
     if (!game) return;
@@ -211,6 +243,9 @@ function CoachApp() {
           onCreateTeam={createTeam}
           onJoinTeam={joinTeam}
           onUseLocal={useLocalMode}
+          onRequestMagicLink={requestMagicLink}
+          onRequestPasswordReset={requestPasswordReset}
+          onResetPassword={resetPassword}
         />
       </>
     );
@@ -233,7 +268,18 @@ function CoachApp() {
               <span className="bg-blue-600 text-white px-2 py-1 rounded text-xl">#</span>
               Assist Analytics
             </h1>
-            <p className="text-slate-400 mt-1">Player Development &amp; Film Review</p>
+            <p className="text-slate-400 mt-1">
+              {isParentView
+                ? 'Parent view — player focus and season stats'
+                : 'Player Development & Film Review'}
+            </p>
+            <div className="mt-2">
+              <SeasonIndicator
+                meta={state.meta}
+                canEdit={canEdit}
+                onManage={canEdit ? () => setSeasonManageOpen(true) : undefined}
+              />
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 relative">
             <SyncStatus
@@ -250,7 +296,7 @@ function CoachApp() {
             {isDebugAdmin && (
               <DebugViewSwitcher debugView={debugView} onChange={setDebugView} variant="header" />
             )}
-            {effectiveAuth.status === 'authed' && effectiveAuth.team && (
+            {effectiveAuth.status === 'authed' && effectiveAuth.team && canEdit && (
               <button
                 type="button"
                 onClick={() => setTeamSettingsOpen(true)}
@@ -264,7 +310,7 @@ function CoachApp() {
               activePlayerId={state.activePlayerId}
               onSelect={setActivePlayerId}
             />
-            {activePlayer && canEdit && (
+            {activePlayer && canEdit && !isParentView && (
               <button
                 type="button"
                 onClick={() => openEditPlayer(activePlayer)}
@@ -274,15 +320,20 @@ function CoachApp() {
                 Edit Player
               </button>
             )}
-            <DataTransferMenu
-              meta={state.meta}
-              onExport={recordExport}
-              onImport={importAppState}
-              onUpdateMeta={updateMeta}
-              canEdit={canEdit}
-            />
-            <StatGlossaryButton />
-            <AddPlayerForm onAdd={addPlayer} canEdit={canEdit} />
+            {!isParentView && (
+              <>
+                <DataTransferMenu
+                  meta={state.meta}
+                  onExport={recordExport}
+                  onImport={importAppState}
+                  onUpdateMeta={updateMeta}
+                  canEdit={canEdit}
+                />
+                <StatGlossaryButton />
+                <AddPlayerForm onAdd={addPlayer} canEdit={canEdit} />
+              </>
+            )}
+            {isParentView && <StatGlossaryButton />}
             </div>
           </div>
         </div>
@@ -294,7 +345,13 @@ function CoachApp() {
         onDismiss={snoozeBackupReminder}
       />
 
-      {effectiveAuth.team?.role === 'viewer' && (
+      {isParentView && (
+        <div className="bg-blue-50 border-b border-blue-200 text-blue-900 text-sm text-center py-2 px-4">
+          Parent view — select your player above to see their focus and dashboard stats.
+        </div>
+      )}
+
+      {effectiveAuth.team?.role === 'viewer' && !isParentView && (
         <div className="bg-blue-50 border-b border-blue-200 text-blue-900 text-sm text-center py-2 px-4">
           View-only team access — contact your coach to log stats.
         </div>
@@ -302,17 +359,17 @@ function CoachApp() {
 
       <nav className="bg-white border-b border-gray-200 px-4 md:px-8 no-print sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto flex overflow-x-auto hide-scrollbar">
-          {TABS.map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
-              key={tab}
+              key={tab.id}
               type="button"
               onClick={() => {
-                setActiveTab(tab);
-                if (tab !== 'Smart Film Room') clearFilmNavigation();
+                setActiveTab(tab.id);
+                if (tab.id !== 'Smart Film Room') clearFilmNavigation();
               }}
-              className={`whitespace-nowrap px-6 py-4 font-semibold text-sm transition-colors border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'}`}
+              className={`whitespace-nowrap px-6 py-4 font-semibold text-sm transition-colors border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'}`}
             >
-              {tab}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -320,7 +377,11 @@ function CoachApp() {
 
       <main className="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full">
         {state.players.length === 0 ? (
-          <p className="text-gray-500 text-center py-12">Add a player to get started.</p>
+          <p className="text-gray-500 text-center py-12">
+            {isParentView
+              ? 'No players on this team yet. Ask your coach to add your athlete.'
+              : 'Add a player to get started.'}
+          </p>
         ) : (
           <>
             {activeTab === 'Roster' && (
@@ -356,6 +417,7 @@ function CoachApp() {
                 gameScope={gameScope}
                 onGameScopeChange={setGameScope}
                 onOpenFilm={openFilmForGame}
+                meta={state.meta}
               />
             )}
             {activeTab === 'Dashboard' && !activePlayer && (
@@ -365,6 +427,7 @@ function CoachApp() {
               <LogsTab
                 player={activePlayer}
                 games={activePlayerGames}
+                meta={state.meta}
                 addGame={addGame}
                 updateGame={updateGame}
                 deleteGame={deleteGame}
@@ -386,10 +449,14 @@ function CoachApp() {
                 benchmarkSet={activeBenchmarkSet}
                 onSaveTargets={updateBenchmarkTargets}
                 canEdit={canEdit}
+                meta={state.meta}
               />
             )}
             {activeTab === 'Benchmarks' && !activePlayer && (
               <p className="text-gray-500 text-center py-12">Select a player from the Roster or header.</p>
+            )}
+            {activeTab === 'Team Night' && (
+              <TeamNightTab players={state.players} games={state.games} meta={state.meta} />
             )}
             {activeTab === 'Smart Film Room' && activePlayer && (
               <FilmRoomTab
@@ -400,6 +467,7 @@ function CoachApp() {
                 initialGameId={filmGameId}
                 initialClipId={filmClipId}
                 onToggleStarredClip={canEdit ? toggleStarredClip : undefined}
+                meta={state.meta}
               />
             )}
             {activeTab === 'Smart Film Room' && !activePlayer && (
@@ -424,6 +492,17 @@ function CoachApp() {
           auth={effectiveAuth}
           onClose={() => setTeamSettingsOpen(false)}
           onMembershipChanged={refreshSession}
+        />
+      )}
+
+      {seasonManageOpen && canEdit && (
+        <SeasonManageModal
+          meta={state.meta}
+          onSave={(nextMeta) => {
+            updateMeta(nextMeta);
+            setSeasonManageOpen(false);
+          }}
+          onClose={() => setSeasonManageOpen(false)}
         />
       )}
     </div>

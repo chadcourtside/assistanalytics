@@ -9,6 +9,7 @@ import FilmRoomTab from './FilmRoomTab';
 import PlayerViewTab from './PlayerViewTab';
 import TeammatesTab from './TeammatesTab';
 import StatGlossaryButton from './StatGlossaryButton';
+import SeasonIndicator from './SeasonIndicator';
 
 const TABS = ['Focus & Film', 'Dashboard', 'Benchmarks', 'Game Logs', 'Film Room', 'Teammates'];
 
@@ -25,25 +26,26 @@ export default function PlayerPortalApp({
   const [activeTab, setActiveTab] = useState('Focus & Film');
   const [filmGameId, setFilmGameId] = useState(null);
   const [filmClipId, setFilmClipId] = useState(null);
-  const [gameScope, setGameScope] = useState({ seasonFilter: 'all', gameTypeFilter: 'all' });
+  const [gameScope, setGameScope] = useState({ seasonFilter: 'current', gameTypeFilter: 'all' });
 
   const player = payload?.player ?? null;
   const games = payload?.games ?? [];
   const benchmarkSet = payload?.benchmarkSet ?? null;
   const teammates = payload?.teammates ?? [];
   const teamLabels = payload?.teamLabels ?? [];
+  const seasonMeta = payload?.seasonMeta ?? null;
 
   useEffect(() => {
     setGameScope((prev) => ({
       ...prev,
-      seasonFilter: player?.season ? 'player' : 'all',
+      seasonFilter: seasonMeta?.currentSeason ? 'current' : player?.season ? 'player' : 'all',
     }));
-  }, [player?.id, player?.season]);
+  }, [player?.id, player?.season, seasonMeta?.currentSeason]);
 
   const scopedGames = useMemo(() => {
     if (!player) return [];
-    return filterGamesByScope(games, player, gameScope);
-  }, [games, player, gameScope]);
+    return filterGamesByScope(games, player, gameScope, seasonMeta);
+  }, [games, player, gameScope, seasonMeta]);
 
   const openFilmForGame = (game) => {
     if (!game) return;
@@ -118,6 +120,11 @@ export default function PlayerPortalApp({
               {formatTeamLabels(teamLabels) ? ` · ${formatTeamLabels(teamLabels)}` : ''}
               {teamName ? ` · ${teamName}` : ''}
             </p>
+            {seasonMeta && (
+              <div className="mt-2">
+                <SeasonIndicator meta={seasonMeta} />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <StatGlossaryButton />
@@ -173,6 +180,7 @@ export default function PlayerPortalApp({
             gameScope={gameScope}
             onGameScopeChange={setGameScope}
             onOpenFilm={openFilmForGame}
+            meta={seasonMeta}
           />
         )}
         {activeTab === 'Benchmarks' && (
@@ -184,12 +192,14 @@ export default function PlayerPortalApp({
             onGameScopeChange={setGameScope}
             benchmarkSet={benchmarkSet}
             canEdit={false}
+            meta={seasonMeta}
           />
         )}
         {activeTab === 'Game Logs' && (
           <LogsTab
             player={player}
             games={games}
+            meta={seasonMeta}
             onOpenFilmClip={openFilmForClip}
             canEdit={false}
           />
@@ -202,6 +212,7 @@ export default function PlayerPortalApp({
             onGameScopeChange={setGameScope}
             initialGameId={filmGameId}
             initialClipId={filmClipId}
+            meta={seasonMeta}
           />
         )}
         {activeTab === 'Teammates' && (

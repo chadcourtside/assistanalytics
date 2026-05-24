@@ -116,6 +116,46 @@ export function useAuth() {
     setAuth({ status: 'local', user: null, team: null, error: null });
   }, []);
 
+  const requestMagicLink = useCallback(async ({ email }) => {
+    try {
+      const data = await cloudApi.requestMagicLink({ email });
+      return { success: true, message: data.message };
+    } catch (err) {
+      return { success: false, error: err.body?.error || err.message || 'Could not send link' };
+    }
+  }, []);
+
+  const requestPasswordReset = useCallback(async ({ email }) => {
+    try {
+      const data = await cloudApi.requestPasswordReset({ email });
+      return { success: true, message: data.message };
+    } catch (err) {
+      return { success: false, error: err.body?.error || err.message || 'Could not send reset email' };
+    }
+  }, []);
+
+  const resetPassword = useCallback(async ({ token, password }) => {
+    try {
+      const data = await cloudApi.resetPassword({ token, password });
+      setLocalOnlyMode(false);
+      applySession(data);
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: err.body?.error || err.message || 'Could not reset password' };
+    }
+  }, [applySession]);
+
+  const consumeAuthToken = useCallback(async (token) => {
+    try {
+      const data = await cloudApi.consumeAuthToken({ token });
+      setLocalOnlyMode(false);
+      applySession(data);
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: err.body?.error || err.message || 'Invalid or expired link' };
+    }
+  }, [applySession]);
+
   return {
     auth,
     refreshSession,
@@ -125,5 +165,9 @@ export function useAuth() {
     createTeam,
     joinTeam,
     useLocalMode,
+    requestMagicLink,
+    requestPasswordReset,
+    resetPassword,
+    consumeAuthToken,
   };
 }

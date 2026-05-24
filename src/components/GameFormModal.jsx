@@ -9,6 +9,8 @@ import {
   parseStatValue,
 } from '../utils/gameForm';
 import { GAME_TYPE_OPTIONS } from '../constants/gameTypes';
+import { getPlayerTeams } from '../utils/playerTeams';
+import { getWorkspaceCurrentSeason } from '../utils/season';
 import { applyPlayByPlayCountsToStats } from '../utils/playByPlayStats';
 import StatHelp from './StatHelp';
 import PlayByPlayTagBar from './PlayByPlayTagBar';
@@ -18,8 +20,14 @@ import { insertPlayByPlayLine } from '../utils/playByPlayForm';
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
 
-export default function GameFormModal({ mode, game, initialForm, onSave, onClose }) {
-  const [form, setForm] = useState(() => initialForm ?? gameToFormState(game));
+export default function GameFormModal({ mode, game, initialForm, player, meta, onSave, onClose }) {
+  const playerTeams = getPlayerTeams(player);
+  const defaultTeam = playerTeams[0] || '';
+  const defaultSeason = getWorkspaceCurrentSeason(meta) || player?.season || '';
+
+  const [form, setForm] = useState(
+    () => initialForm ?? gameToFormState(game, { defaultTeam, defaultSeason })
+  );
   const [errors, setErrors] = useState({});
   const [playTime, setPlayTime] = useState('');
   const [customNote, setCustomNote] = useState('');
@@ -177,6 +185,36 @@ export default function GameFormModal({ mode, game, initialForm, onSave, onClose
                 onChange={(e) => setField('competition', e.target.value)}
                 className={inputClass}
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                Team for this game
+              </label>
+              {playerTeams.length > 0 ? (
+                <select
+                  value={form.team}
+                  onChange={(e) => setField('team', e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select team…</option>
+                  {playerTeams.map((team) => (
+                    <option key={team} value={team}>
+                      {team}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="e.g. 7th Grade Gold"
+                  value={form.team}
+                  onChange={(e) => setField('team', e.target.value)}
+                  className={inputClass}
+                />
+              )}
+              <p className="text-[11px] text-gray-400 mt-1">
+                Which team was this game for? Important when a player is on travel and club teams.
+              </p>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">

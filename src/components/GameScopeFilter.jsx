@@ -1,8 +1,8 @@
 import { GAME_TYPE_OPTIONS } from '../constants/gameTypes';
 import { getSeasonFilterOptions } from '../utils/gameFilters';
 
-export default function GameScopeFilter({ player, scope, onChange, className = '' }) {
-  const seasonOptions = getSeasonFilterOptions(player);
+export default function GameScopeFilter({ player, meta, scope, onChange, className = '' }) {
+  const seasonOptions = getSeasonFilterOptions(player, meta);
 
   return (
     <div className={`flex flex-wrap items-end gap-3 ${className}`}>

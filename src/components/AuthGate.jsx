@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { readResetTokenFromUrl } from '../utils/authUrl';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
@@ -21,15 +22,21 @@ export default function AuthGate({
   onCreateTeam,
   onJoinTeam,
   onUseLocal,
+  onRequestMagicLink,
+  onRequestPasswordReset,
+  onResetPassword,
 }) {
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState(() => (readResetTokenFromUrl() ? 'reset' : 'login'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [teamName, setTeamName] = useState('');
   const [inviteCode, setInviteCode] = useState(() => readJoinCodeFromUrl());
   const [joinRole, setJoinRole] = useState(() => readJoinRoleFromUrl());
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [infoMessage, setInfoMessage] = useState('');
+  const resetToken = readResetTokenFromUrl();
 
   useEffect(() => {
     const code = readJoinCodeFromUrl();
@@ -73,6 +80,47 @@ export default function AuthGate({
     setSubmitting(true);
     setFormError(null);
     const result = await onJoinTeam({ inviteCode, role: joinRole });
+    if (!result.success) setFormError(result.error);
+    setSubmitting(false);
+  };
+
+  const handleMagicLink = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormError(null);
+    setInfoMessage('');
+    const result = await onRequestMagicLink({ email });
+    if (!result.success) setFormError(result.error);
+    else {
+      setInfoMessage(result.message || 'Check your email for a sign-in link.');
+      setMode('sent');
+    }
+    setSubmitting(false);
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setFormError(null);
+    setInfoMessage('');
+    const result = await onRequestPasswordReset({ email });
+    if (!result.success) setFormError(result.error);
+    else {
+      setInfoMessage(result.message || 'Check your email for a reset link.');
+      setMode('sent');
+    }
+    setSubmitting(false);
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setFormError('Passwords do not match.');
+      return;
+    }
+    setSubmitting(true);
+    setFormError(null);
+    const result = await onResetPassword({ token: resetToken, password });
     if (!result.success) setFormError(result.error);
     setSubmitting(false);
   };
@@ -164,6 +212,49 @@ export default function AuthGate({
     );
   }
 
+  if (mode === 'reset' && resetToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Set a new password</h1>
+          <p className="text-sm text-gray-500 mb-6">Choose a new password for your account.</p>
+          {displayError && (
+            <div className="mb-4 p-3 rounded-md bg-red-50 text-red-800 text-sm">{displayError}</div>
+          )}
+          <form onSubmit={handleResetPassword} className="space-y-3">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="New password (8+ characters)"
+              className={inputClass}
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              className={inputClass}
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-60"
+            >
+              Update password
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
@@ -178,31 +269,50 @@ export default function AuthGate({
           )}
         </p>
 
-        <div className="flex gap-2 mb-4">
-          {['login', 'signup'].map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => {
-                setMode(tab);
-                setFormError(null);
-              }}
-              className={`flex-1 py-2 text-sm font-semibold rounded-md ${
-                mode === tab
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {tab === 'login' ? 'Log in' : 'Sign up'}
-            </button>
-          ))}
-        </div>
+        {mode !== 'sent' && mode !== 'forgot' && mode !== 'magic' && (
+          <div className="flex gap-2 mb-4">
+            {['login', 'signup'].map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => {
+                  setMode(tab);
+                  setFormError(null);
+                  setInfoMessage('');
+                }}
+                className={`flex-1 py-2 text-sm font-semibold rounded-md ${
+                  mode === tab
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {tab === 'login' ? 'Log in' : 'Sign up'}
+              </button>
+            ))}
+          </div>
+        )}
 
         {displayError && (
           <div className="mb-4 p-3 rounded-md bg-red-50 text-red-800 text-sm">{displayError}</div>
         )}
+        {infoMessage && (
+          <div className="mb-4 p-3 rounded-md bg-blue-50 text-blue-800 text-sm">{infoMessage}</div>
+        )}
 
-        {mode === 'signup' ? (
+        {mode === 'sent' && (
+          <button
+            type="button"
+            onClick={() => {
+              setMode('login');
+              setInfoMessage('');
+            }}
+            className="w-full py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm"
+          >
+            Back to log in
+          </button>
+        )}
+
+        {mode === 'signup' && (
           <form onSubmit={handleSignup} className="space-y-3">
             <input
               type="email"
@@ -238,7 +348,9 @@ export default function AuthGate({
               Create account
             </button>
           </form>
-        ) : (
+        )}
+
+        {mode === 'login' && (
           <form onSubmit={handleLogin} className="space-y-3">
             <input
               type="email"
@@ -264,6 +376,80 @@ export default function AuthGate({
               className="w-full py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-60"
             >
               Log in
+            </button>
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('magic');
+                  setFormError(null);
+                  setInfoMessage('');
+                }}
+                className="text-sm text-blue-700 hover:text-blue-900 font-semibold text-left"
+              >
+                Email me a sign-in link
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('forgot');
+                  setFormError(null);
+                  setInfoMessage('');
+                }}
+                className="text-sm text-gray-600 hover:text-gray-900 text-left"
+              >
+                Forgot password?
+              </button>
+            </div>
+          </form>
+        )}
+
+        {mode === 'magic' && (
+          <form onSubmit={handleMagicLink} className="space-y-3">
+            <p className="text-sm text-gray-600">We&apos;ll email you a one-time link to sign in.</p>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className={inputClass}
+              required
+              autoComplete="email"
+            />
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-60"
+            >
+              Send sign-in link
+            </button>
+            <button type="button" onClick={() => setMode('login')} className="text-sm text-gray-600">
+              Back
+            </button>
+          </form>
+        )}
+
+        {mode === 'forgot' && (
+          <form onSubmit={handleForgotPassword} className="space-y-3">
+            <p className="text-sm text-gray-600">We&apos;ll email you a link to reset your password.</p>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className={inputClass}
+              required
+              autoComplete="email"
+            />
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-2.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm disabled:opacity-60"
+            >
+              Send reset link
+            </button>
+            <button type="button" onClick={() => setMode('login')} className="text-sm text-gray-600">
+              Back
             </button>
           </form>
         )}

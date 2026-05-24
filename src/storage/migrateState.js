@@ -6,6 +6,7 @@ import { DEFAULT_BENCHMARK_TARGETS } from '../data/defaultBenchmarkTargets';
 
 import { normalizePlayerFocus, normalizeReviewedClips } from '../utils/playerView';
 import { getPlayerTeams, normalizeTeamList } from '../utils/playerTeams';
+import { normalizeSeasonList } from '../utils/season';
 
 function normalizeGame(game) {
   const playByPlay = Array.isArray(game.playByPlay) ? game.playByPlay : [];
@@ -100,11 +101,28 @@ function migrateV4ToV5(state) {
   };
 }
 
+function normalizeMeta(meta) {
+  return {
+    ...DEFAULT_APP_META,
+    ...(meta || {}),
+    archivedSeasons: normalizeSeasonList(meta?.archivedSeasons),
+    currentSeason: (meta?.currentSeason || '').trim() || undefined,
+  };
+}
+
 function migrateV5ToV6(state) {
   return {
     ...state,
     schemaVersion: 6,
     players: (state.players || []).map(normalizePlayer),
+  };
+}
+
+function migrateV6ToV7(state) {
+  return {
+    ...state,
+    schemaVersion: 7,
+    meta: normalizeMeta(state.meta),
   };
 }
 
@@ -136,8 +154,12 @@ export function migrateState(state) {
     next = migrateV5ToV6(next);
   }
 
+  if (next.schemaVersion < 7) {
+    next = migrateV6ToV7(next);
+  }
+
   next.schemaVersion = SCHEMA_VERSION;
-  next.meta = { ...DEFAULT_APP_META, ...(next.meta || {}) };
+  next.meta = normalizeMeta(next.meta);
   next.players = (next.players || []).map(normalizePlayer);
   next.games = (next.games || []).map(normalizeGame);
   next.benchmarkSets = Array.isArray(next.benchmarkSets) ? next.benchmarkSets : [];

@@ -8,7 +8,9 @@ A local-first **multi-player** basketball development app for tracking individua
 - **Roster** — Team-grouped player list with season snapshot, key benchmark status, and quick actions
 - **Dashboard** — Last game snapshot, season trend charts, totals, box score, per-24/32 rates, PDF export
 - **Stat Guide** — In-app glossary (header button) plus hover tooltips on stat labels
-- **Game Logs** — Add, edit, and delete games; play-by-play and YouTube timestamp links
+- **Game Logs** — Add, edit, and delete games; per-game **team** picker (club vs travel); play-by-play and YouTube timestamp links
+- **Team Night** — Same-date box scores for every player who logged a game
+- **Seasons** — Set a **current season** (header badge), archive past seasons, and still view archived stats via season filters
 - **Benchmarks** — Per-player development targets vs season averages; **edit targets in the UI**
 - **Smart Film Room** — Structured play-event filters with embedded YouTube playback
 - **Export / Import** — JSON backup for moving data between devices (phone ↔ laptop)
@@ -81,8 +83,16 @@ The app can sync roster data to **Cloudflare D1** so coaches and parents on the 
    ```bash
    npm run db:migrate:player-links:remote
    ```
+   For magic-link login and password reset:
+   ```bash
+   npm run db:migrate:auth-tokens:remote
+   ```
 4. **Bind D1 to Pages** — Pages project → **Settings** → **Functions** → **D1 bindings** → add binding name `DB` → database `assistanalytics`.
-5. **Set `SESSION_SECRET`** — Pages → **Settings** → **Environment variables** → add a long random string (production + preview).
+5. **Set secrets** — Pages → **Settings** → **Environment variables**:
+   - `SESSION_SECRET` — long random string (production + preview)
+   - `RESEND_API_KEY` — for magic-link and password-reset email (optional; without it, links are logged in dev)
+   - `EMAIL_FROM` — verified sender in Resend (e.g. `Assist Analytics <noreply@yourdomain.com>`)
+   - `APP_URL` — public site URL (e.g. `https://assistanalytics.pages.dev`) for links in emails
 
 ### Local API development
 
@@ -96,9 +106,9 @@ Open the URL Wrangler prints (API routes under `/api/*` run as Pages Functions f
 
 ### How cloud sync works
 
-- **Sign up** with email + password; optionally create a team (e.g. `7th Grade Gold`) during signup.
+- **Sign up** with email + password, **magic link**, or **forgot password** reset email.
 - **Invite others** — owners open **Team** for coach/parent invite links, member list, roles, and removal.
-- **Parent access** — share the **parent link** (`?join=CODE&role=viewer`) or choose viewer when joining; viewers get read-only UI.
+- **Parent access** — share the **parent link** (`?join=CODE&role=viewer`) or choose viewer when joining. Parents land on **Dashboard** with only **Focus & Film** and **Dashboard** tabs (read-only).
 - **Player portal** — coaches open **Edit Player** → **Create player link** to share with an athlete. The player gets full read access to their stats, trends, benchmarks, and film. Teammates on the same team label show **box score stats only** (no film, tags, or metrics). Other teams in the workspace are hidden.
 - **Auto-save** — edits debounce to the cloud (~1.5s). Failed saves queue locally and retry when back online.
 - **Conflicts** — if two devices save at once, the header offers **Load cloud version**.
@@ -110,14 +120,16 @@ Export/import JSON backups still work for manual backups and migration.
 ## How to use
 
 1. Start the app — a default player (Avery) with sample games loads on first visit.
-2. Open **Roster** to see all players by team — use **Edit Player** to add team labels (e.g. `7th Grade Gold`, `Club Elite`). Players can belong to multiple teams.
-3. Use the **Player** dropdown (grouped by team) or click a name on the Roster to switch players.
-4. Open **Game Logs**, click **+ Add Game**, and enter box score stats and play-by-play.
-5. Paste a YouTube URL on the game card (or in the game form).
-6. Use **Smart Film Room** to browse clips by structured event type.
-7. Review **Dashboard** for last game, trends, and cumulative stats.
-8. Use **Benchmarks** to compare averages against goals — click **Edit Targets** to customize.
-9. Open **Stat Guide** for metric definitions.
+2. Open **Roster** to see all players by team — use **Edit Player** to add team labels (e.g. `7th Grade Gold`, `Club Elite`). Players can belong to multiple teams in the same season.
+3. Set the **current season** from the header badge (coaches/owners). Archive past seasons when done — archived stats stay available in season filters.
+4. Use the **Player** dropdown (grouped by team) or click a name on the Roster to switch players.
+5. Open **Game Logs**, click **+ Add Game**, pick which **team** the game was for, and enter box score stats and play-by-play.
+6. Open **Team Night** to compare every player's box score from the same game date.
+7. Paste a YouTube URL on the game card (or in the game form).
+8. Use **Smart Film Room** to browse clips by structured event type.
+9. Review **Dashboard** for last game, trends, and cumulative stats.
+10. Use **Benchmarks** to compare averages against goals — click **Edit Targets** to customize.
+11. Open **Stat Guide** for metric definitions.
 
 ### Moving between devices (recommended workflow)
 
@@ -134,9 +146,9 @@ Export/import JSON backups still work for manual backups and migration.
 
 ## Next improvement ideas
 
-- Magic-link email login
 - R2 nightly auto-backup exports
-- Offline sync retry queue
+- Mobile quick-log UX for sideline entry
+- AI-assisted play-by-play tagging from film transcripts
 
 ## Repository
 

@@ -98,6 +98,34 @@ export async function saveCloudState(state, expectedUpdatedAt) {
   });
 }
 
+export async function resetPassword({ token, password }) {
+  return apiFetch('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
+  });
+}
+
+export async function requestMagicLink({ email }) {
+  return apiFetch('/auth/magic-link', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function requestPasswordReset({ email }) {
+  return apiFetch('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function consumeAuthToken({ token }) {
+  return apiFetch('/auth/consume', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
 export async function isCloudApiAvailable() {
   try {
     await fetchSession();

@@ -19,6 +19,8 @@ export const DEFAULT_APP_META = {
   autoBackupOnSave: false,
   exportReminderDays: 7,
   backupSnoozedUntil: null,
+  currentSeason: '',
+  archivedSeasons: [],
 };
 
 export function normalizeGameType(value) {
