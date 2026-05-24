@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { filterGamesByScope } from '../utils/gameFilters';
+import { formatTeamLabels } from '../utils/playerTeams';
 import { usePlayerPortal } from '../hooks/usePlayerPortal';
 import DashboardTab from './DashboardTab';
 import LogsTab from './LogsTab';
@@ -9,7 +10,7 @@ import PlayerViewTab from './PlayerViewTab';
 import TeammatesTab from './TeammatesTab';
 import StatGlossaryButton from './StatGlossaryButton';
 
-const TABS = ['My Stats', 'Dashboard', 'Game Logs', 'Benchmarks', 'Film Room', 'Teammates'];
+const TABS = ['My Stats', 'Dashboard', 'Benchmarks', 'Game Logs', 'Film Room', 'Teammates'];
 
 export default function PlayerPortalApp({ initialToken }) {
   const { status, payload, teamName, error, reload, signOut } = usePlayerPortal(initialToken);
@@ -22,7 +23,7 @@ export default function PlayerPortalApp({ initialToken }) {
   const games = payload?.games ?? [];
   const benchmarkSet = payload?.benchmarkSet ?? null;
   const teammates = payload?.teammates ?? [];
-  const teamLabel = payload?.teamLabel ?? null;
+  const teamLabels = payload?.teamLabels ?? [];
 
   useEffect(() => {
     setGameScope((prev) => ({
@@ -106,7 +107,7 @@ export default function PlayerPortalApp({ initialToken }) {
             </h1>
             <p className="text-slate-400 mt-1">
               {player.displayName}
-              {teamLabel ? ` · ${teamLabel}` : ''}
+              {formatTeamLabels(teamLabels) ? ` · ${formatTeamLabels(teamLabels)}` : ''}
               {teamName ? ` · ${teamName}` : ''}
             </p>
           </div>
@@ -164,14 +165,6 @@ export default function PlayerPortalApp({ initialToken }) {
             onOpenFilm={openFilmForGame}
           />
         )}
-        {activeTab === 'Game Logs' && (
-          <LogsTab
-            player={player}
-            games={games}
-            onOpenFilmClip={openFilmForClip}
-            canEdit={false}
-          />
-        )}
         {activeTab === 'Benchmarks' && (
           <BenchmarksTab
             player={player}
@@ -180,6 +173,14 @@ export default function PlayerPortalApp({ initialToken }) {
             gameScope={gameScope}
             onGameScopeChange={setGameScope}
             benchmarkSet={benchmarkSet}
+            canEdit={false}
+          />
+        )}
+        {activeTab === 'Game Logs' && (
+          <LogsTab
+            player={player}
+            games={games}
+            onOpenFilmClip={openFilmForClip}
             canEdit={false}
           />
         )}
@@ -194,7 +195,7 @@ export default function PlayerPortalApp({ initialToken }) {
           />
         )}
         {activeTab === 'Teammates' && (
-          <TeammatesTab teammates={teammates} teamLabel={teamLabel} />
+          <TeammatesTab teammates={teammates} teamLabels={teamLabels} />
         )}
       </main>
     </div>

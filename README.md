@@ -4,7 +4,7 @@ A local-first **multi-player** basketball development app for tracking individua
 
 ## What it does
 
-- **Players** — Add players, **Edit Player** (name, jersey, team) from the header or Roster, and switch via the dropdown
+- **Players** — Add players, **Edit Player** (name, jersey, teams) from the header or Roster, and switch via the dropdown
 - **Roster** — Team-grouped player list with season snapshot, key benchmark status, and quick actions
 - **Dashboard** — Last game snapshot, season trend charts, totals, box score, per-24/32 rates, PDF export
 - **Stat Guide** — In-app glossary (header button) plus hover tooltips on stat labels
@@ -110,7 +110,7 @@ Export/import JSON backups still work for manual backups and migration.
 ## How to use
 
 1. Start the app — a default player (Avery) with sample games loads on first visit.
-2. Open **Roster** to see all players by team — use **Edit** to set team names (e.g. `7th Grade Gold`).
+2. Open **Roster** to see all players by team — use **Edit Player** to add team labels (e.g. `7th Grade Gold`, `Club Elite`). Players can belong to multiple teams.
 3. Use the **Player** dropdown (grouped by team) or click a name on the Roster to switch players.
 4. Open **Game Logs**, click **+ Add Game**, and enter box score stats and play-by-play.
 5. Paste a YouTube URL on the game card (or in the game form).

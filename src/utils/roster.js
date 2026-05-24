@@ -1,4 +1,5 @@
 import { formatGameTitle, formatGameDateDisplay, sortGamesNewestFirst } from './gameStats';
+import { getPlayerTeams } from './playerTeams';
 import {
   sumGameStats,
   seasonAverages,
@@ -9,14 +10,21 @@ import {
 export const NO_TEAM_LABEL = 'No Team';
 
 export function getPlayerTeamLabel(player) {
-  const team = (player?.team || '').trim();
-  return team || NO_TEAM_LABEL;
+  const teams = getPlayerTeams(player);
+  return teams[0] || NO_TEAM_LABEL;
 }
 
 export function getTeamList(players) {
   const teams = new Set();
   for (const p of players) {
-    teams.add(getPlayerTeamLabel(p));
+    const playerTeams = getPlayerTeams(p);
+    if (playerTeams.length === 0) {
+      teams.add(NO_TEAM_LABEL);
+    } else {
+      for (const label of playerTeams) {
+        teams.add(label);
+      }
+    }
   }
   return [...teams].sort((a, b) => {
     if (a === NO_TEAM_LABEL) return 1;
@@ -29,13 +37,29 @@ export function groupPlayersByTeam(players, teamFilter = 'all') {
   const filtered =
     teamFilter === 'all'
       ? players
-      : players.filter((p) => getPlayerTeamLabel(p) === teamFilter);
+      : players.filter((p) => {
+          if (teamFilter === NO_TEAM_LABEL) return getPlayerTeams(p).length === 0;
+          return getPlayerTeams(p).includes(teamFilter);
+        });
 
   const map = new Map();
   for (const player of filtered) {
-    const label = getPlayerTeamLabel(player);
-    if (!map.has(label)) map.set(label, []);
-    map.get(label).push(player);
+    const labels = getPlayerTeams(player);
+    const bucketLabels =
+      teamFilter === 'all'
+        ? labels.length > 0
+          ? labels
+          : [NO_TEAM_LABEL]
+        : teamFilter === NO_TEAM_LABEL
+          ? [NO_TEAM_LABEL]
+          : [teamFilter];
+
+    for (const label of bucketLabels) {
+      if (!map.has(label)) map.set(label, []);
+      if (!map.get(label).some((p) => p.id === player.id)) {
+        map.get(label).push(player);
+      }
+    }
   }
 
   return [...map.entries()]

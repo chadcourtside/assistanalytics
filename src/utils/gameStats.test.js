@@ -36,7 +36,7 @@ describe('normalizeGameStats', () => {
 });
 
 describe('game display labels', () => {
-  const player = { displayName: 'Avery', team: 'Courtside Elite' };
+  const player = { displayName: 'Avery', teams: ['Courtside Elite'] };
 
   it('uses player team vs opponent in title', () => {
     expect(
@@ -46,11 +46,11 @@ describe('game display labels', () => {
 
   it('falls back to display name when no team', () => {
     expect(
-      formatGameTitle({ opponent: 'Coyotes' }, { displayName: 'Avery', team: '' })
+      formatGameTitle({ opponent: 'Coyotes' }, { displayName: 'Avery', teams: [] })
     ).toBe('Avery vs Coyotes');
   });
 
-  it('prefers game.team over player.team', () => {
+  it('prefers game.team over player teams', () => {
     expect(
       formatGameTitle({ opponent: 'Hawks', team: 'All-Stars' }, player)
     ).toBe('All-Stars vs Hawks');

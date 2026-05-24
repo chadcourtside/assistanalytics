@@ -1,4 +1,5 @@
 import { sortGamesNewestFirst, normalizeGameStats, formatGameTitle, formatGameDateDisplay } from './gameStats';
+import { formatTeamLabels, getPlayerTeams } from './playerTeams';
 import { getStatEntry } from '../data/statGlossary';
 import {
   getBenchmarkMetricValue,
@@ -213,7 +214,7 @@ export function buildPlayerReportData({ player, games, benchmarkSet }) {
 
   return {
     playerName: player?.displayName || 'Player',
-    team: player?.team,
+    team: formatTeamLabels(getPlayerTeams(player)) || undefined,
     season: player?.season,
     generatedAt: new Date().toLocaleDateString(undefined, {
       month: 'long',

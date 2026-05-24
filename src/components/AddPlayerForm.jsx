@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import TeamListEditor from './TeamListEditor';
 
 export default function AddPlayerForm({ onAdd, canEdit = true }) {
   const [open, setOpen] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [jerseyNumber, setJerseyNumber] = useState('');
-  const [team, setTeam] = useState('');
+  const [teams, setTeams] = useState([]);
   const [season, setSeason] = useState('');
 
   const handleSubmit = (e) => {
@@ -14,14 +15,14 @@ export default function AddPlayerForm({ onAdd, canEdit = true }) {
       firstName,
       lastName,
       jerseyNumber,
-      team,
+      teams,
       season,
     });
     if (player) {
       setFirstName('');
       setLastName('');
       setJerseyNumber('');
-      setTeam('');
+      setTeams([]);
       setSeason('');
       setOpen(false);
     }
@@ -44,7 +45,7 @@ export default function AddPlayerForm({ onAdd, canEdit = true }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="absolute right-0 top-full mt-2 z-20 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-200 p-4 w-72"
+      className="absolute right-0 top-full mt-2 z-20 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-200 p-4 w-80"
     >
       <h3 className="font-bold text-sm mb-3">New Player</h3>
       <div className="space-y-2">
@@ -72,18 +73,12 @@ export default function AddPlayerForm({ onAdd, canEdit = true }) {
         />
         <input
           type="text"
-          placeholder="Team"
-          value={team}
-          onChange={(e) => setTeam(e.target.value)}
-          className="w-full text-sm px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none"
-        />
-        <input
-          type="text"
           placeholder="Season (e.g. 2025-26)"
           value={season}
           onChange={(e) => setSeason(e.target.value)}
           className="w-full text-sm px-3 py-2 border rounded-md focus:ring focus:ring-blue-200 focus:outline-none"
         />
+        <TeamListEditor teams={teams} onChange={setTeams} idPrefix="add-player-team" />
       </div>
       <div className="flex gap-2 mt-3">
         <button

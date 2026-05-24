@@ -1,4 +1,4 @@
-import { getPlayerTeamLabel } from '../utils/roster';
+import { getPlayerTeams } from '../utils/playerTeams';
 
 export default function PlayerSelector({ players, activePlayerId, onSelect }) {
   if (players.length === 0) {
@@ -7,9 +7,14 @@ export default function PlayerSelector({ players, activePlayerId, onSelect }) {
 
   const byTeam = new Map();
   for (const p of players) {
-    const team = getPlayerTeamLabel(p);
-    if (!byTeam.has(team)) byTeam.set(team, []);
-    byTeam.get(team).push(p);
+    const labels = getPlayerTeams(p);
+    const teams = labels.length > 0 ? labels : ['No Team'];
+    for (const team of teams) {
+      if (!byTeam.has(team)) byTeam.set(team, []);
+      if (!byTeam.get(team).some((player) => player.id === p.id)) {
+        byTeam.get(team).push(p);
+      }
+    }
   }
 
   const teamEntries = [...byTeam.entries()].sort(([a], [b]) => {
@@ -31,7 +36,7 @@ export default function PlayerSelector({ players, activePlayerId, onSelect }) {
             {teamPlayers
               .sort((a, b) => a.displayName.localeCompare(b.displayName))
               .map((p) => (
-                <option key={p.id} value={p.id}>
+                <option key={`${team}-${p.id}`} value={p.id}>
                   {p.displayName}
                   {p.jerseyNumber ? ` #${p.jerseyNumber}` : ''}
                 </option>

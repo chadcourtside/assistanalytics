@@ -1,4 +1,6 @@
 /** Total points from made field goals and free throws (2PM + 3PM + FTM). */
+import { getPrimaryTeamLabel } from './playerTeams';
+
 export function calcPointsFromShooting(fgm = 0, threePm = 0, ftm = 0) {
   const twoPm = Math.max(0, fgm - threePm);
   return twoPm * 2 + threePm * 3 + ftm;
@@ -48,12 +50,14 @@ export function normalizeGameStats(raw = {}) {
   };
 }
 
-/** Player or game team for matchup titles (game.team overrides player.team). */
+/** Player or game team for matchup titles (game.team overrides player teams). */
 export function getOurTeamLabel(game, player) {
   const gameTeam = (game?.team || '').trim();
-  const playerTeam = (player?.team || '').trim();
   if (gameTeam) return gameTeam;
-  if (playerTeam) return playerTeam;
+
+  const primaryTeam = getPrimaryTeamLabel(player);
+  if (primaryTeam) return primaryTeam;
+
   return player?.displayName?.trim() || 'Our Team';
 }
 

@@ -110,7 +110,7 @@ export default function PlayerLinkSection({ player, cloudEnabled }) {
         <h3 className="text-sm font-bold text-gray-700">Player portal link</h3>
         <p className="text-xs text-gray-500 mt-1">
           Share with {player.displayName} for full read access to their stats, trends, and film.
-          Teammates on the same team label show box scores only — no film or tags.
+          Teammates on the same team labels show box scores only — no film or tags.
         </p>
       </div>
 

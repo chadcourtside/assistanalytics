@@ -106,75 +106,100 @@ function TeammateBoxScoreTable({ player, games }) {
   );
 }
 
-export default function TeammatesTab({ teammates, teamLabel }) {
+function TeammateGroup({ teammateEntry, expandedId, onToggle }) {
+  const { player, games } = teammateEntry;
+  const open = expandedId === player.id;
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(open ? null : player.id)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50"
+      >
+        <div>
+          <span className="font-semibold text-gray-900">{player.displayName}</span>
+          {player.jerseyNumber && (
+            <span className="text-gray-400 ml-2">#{player.jerseyNumber}</span>
+          )}
+          {player.position && (
+            <span className="text-xs text-gray-400 ml-2">{player.position}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-sm text-gray-500">
+          <span>{games.length} games</span>
+          <span className="text-gray-400">{open ? '▾' : '▸'}</span>
+        </div>
+      </button>
+      {open && <TeammateBoxScoreTable player={player} games={games} />}
+    </div>
+  );
+}
+
+export default function TeammatesTab({ teammates, teamLabels }) {
   const [expandedId, setExpandedId] = useState(null);
 
-  const sorted = useMemo(
-    () =>
-      [...(teammates || [])].sort((a, b) =>
-        (a.player.displayName || '').localeCompare(b.player.displayName || '')
-      ),
-    [teammates]
-  );
+  const grouped = useMemo(() => {
+    const labels = teamLabels?.length ? teamLabels : [];
+    const sections = labels.map((label) => ({
+      label,
+      entries: (teammates || []).filter((entry) => entry.sharedTeams?.includes(label)),
+    }));
+    return sections.filter((section) => section.entries.length > 0);
+  }, [teammates, teamLabels]);
 
-  if (!teamLabel) {
+  const totalTeammates = useMemo(() => {
+    const seen = new Set();
+    for (const entry of teammates || []) {
+      seen.add(entry.player.id);
+    }
+    return seen.size;
+  }, [teammates]);
+
+  if (!teamLabels?.length) {
     return (
       <div className="text-center py-12 text-gray-500 space-y-2">
-        <p className="text-lg font-medium">No team assigned</p>
-        <p className="text-sm">Ask your coach to set your team on the roster.</p>
+        <p className="text-lg font-medium">No teams assigned</p>
+        <p className="text-sm">Ask your coach to add your school and club teams on the roster.</p>
       </div>
     );
   }
 
-  if (sorted.length === 0) {
+  if (totalTeammates === 0) {
     return (
       <div className="text-center py-12 text-gray-500 space-y-2">
-        <p className="text-lg font-medium">No teammates on {teamLabel}</p>
-        <p className="text-sm">Box scores for teammates on your team will appear here.</p>
+        <p className="text-lg font-medium">No teammates yet</p>
+        <p className="text-sm">Box scores for teammates on your teams will appear here.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-800">Teammates</h2>
         <p className="text-sm text-gray-500">
-          {teamLabel} — box score stats only (no film or play-by-play tags)
+          Box score stats only (no film or play-by-play tags) for players on{' '}
+          {teamLabels.join(', ')}
         </p>
       </div>
-      <div className="space-y-3">
-        {sorted.map(({ player, games }) => {
-          const open = expandedId === player.id;
-          return (
-            <div
-              key={player.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-            >
-              <button
-                type="button"
-                onClick={() => setExpandedId(open ? null : player.id)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50"
-              >
-                <div>
-                  <span className="font-semibold text-gray-900">{player.displayName}</span>
-                  {player.jerseyNumber && (
-                    <span className="text-gray-400 ml-2">#{player.jerseyNumber}</span>
-                  )}
-                  {player.position && (
-                    <span className="text-xs text-gray-400 ml-2">{player.position}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-500">
-                  <span>{games.length} games</span>
-                  <span className="text-gray-400">{open ? '▾' : '▸'}</span>
-                </div>
-              </button>
-              {open && <TeammateBoxScoreTable player={player} games={games} />}
-            </div>
-          );
-        })}
-      </div>
+      {grouped.map(({ label, entries }) => (
+        <section key={label} className="space-y-3">
+          <h3 className="text-lg font-bold text-gray-800">{label}</h3>
+          <div className="space-y-3">
+            {entries
+              .sort((a, b) => a.player.displayName.localeCompare(b.player.displayName))
+              .map((entry) => (
+                <TeammateGroup
+                  key={`${label}-${entry.player.id}`}
+                  teammateEntry={entry}
+                  expandedId={expandedId}
+                  onToggle={setExpandedId}
+                />
+              ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

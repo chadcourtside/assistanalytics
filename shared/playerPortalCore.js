@@ -1,3 +1,9 @@
+import {
+  getPlayerTeams,
+  getSharedTeamLabels,
+  playersShareTeam,
+} from './playerTeams.js';
+
 function normalizeGameStats(raw = {}) {
   const threePm = raw.threePm ?? raw.tpm ?? 0;
   const threePa = raw.threePa ?? raw.tpa ?? 0;
@@ -74,13 +80,6 @@ export function toPlayerGame(game) {
   };
 }
 
-function sameTeamLabel(a, b) {
-  const left = (a || '').trim();
-  const right = (b || '').trim();
-  if (!left || !right) return false;
-  return left === right;
-}
-
 /**
  * Build a scoped payload for player portal access.
  * - Linked player: full games, benchmarks, film data
@@ -97,22 +96,23 @@ export function buildPlayerPortalPayload(state, playerId) {
     return { error: 'Player not found in team roster' };
   }
 
-  const teamLabel = player.team?.trim() || null;
+  const teamLabels = getPlayerTeams(player);
   const ownGames = sortGamesNewestFirst(games.filter((g) => g.playerId === playerId)).map(
     toPlayerGame
   );
   const benchmarkSet = benchmarkSets.find((b) => b.playerId === playerId) ?? null;
 
   const teammates = players
-    .filter((p) => p.id !== playerId && sameTeamLabel(p.team, teamLabel))
+    .filter((p) => p.id !== playerId && playersShareTeam(player, p))
     .map((teammate) => ({
       player: {
         id: teammate.id,
         displayName: teammate.displayName,
         jerseyNumber: teammate.jerseyNumber,
         position: teammate.position,
-        team: teammate.team,
+        teams: getPlayerTeams(teammate),
       },
+      sharedTeams: getSharedTeamLabels(player, teammate),
       games: sortGamesNewestFirst(games.filter((g) => g.playerId === teammate.id)).map(
         toBoxScoreGame
       ),
@@ -120,7 +120,7 @@ export function buildPlayerPortalPayload(state, playerId) {
 
   return {
     player,
-    teamLabel,
+    teamLabels,
     games: ownGames,
     benchmarkSet,
     teammates,

@@ -19,7 +19,7 @@ import SyncStatus from './components/SyncStatus';
 import TeamSettingsModal from './components/TeamSettingsModal';
 import EditPlayerModal from './components/EditPlayerModal';
 
-const TABS = ['Roster', 'Player', 'Dashboard', 'Game Logs', 'Benchmarks', 'Smart Film Room'];
+const TABS = ['Roster', 'Player', 'Dashboard', 'Benchmarks', 'Game Logs', 'Smart Film Room'];
 
 export default function App() {
   const [playerToken] = useState(() => readPlayerTokenFromUrl() || readStoredPlayerToken());

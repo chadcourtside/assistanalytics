@@ -29,6 +29,7 @@ import { cloudPayloadToState, stateToCloudPayload } from '../utils/cloudState';
 import { fetchCloudState, saveCloudState } from '../api/cloudApi';
 import { useAuth } from './useAuth';
 import { canEditTeamData } from '../utils/accessControl';
+import { normalizeTeamList } from '../utils/playerTeams';
 
 const CLOUD_SAVE_DELAY_MS = 1500;
 const SESSION_REFRESH_MS = 30_000;
@@ -384,7 +385,7 @@ export function useAppState() {
     updateMeta({ backupSnoozedUntil: snoozeUntil });
   }, [updateMeta]);
 
-  const addPlayer = useCallback(({ firstName, lastName, jerseyNumber, team, position, season }) => {
+  const addPlayer = useCallback(({ firstName, lastName, jerseyNumber, teams, position, season }) => {
     if (!canEditTeamData(auth)) return null;
     const ts = nowIso();
     const trimmedFirst = (firstName || '').trim();
@@ -400,7 +401,7 @@ export function useAppState() {
       lastName: trimmedLast || undefined,
       displayName,
       jerseyNumber: jerseyNumber?.trim() || undefined,
-      team: team?.trim() || undefined,
+      teams: normalizeTeamList(teams),
       position: position?.trim() || undefined,
       season: season?.trim() || undefined,
       playerFocus: { weeklySummary: '', pinnedMetricKeys: [] },
@@ -512,7 +513,9 @@ export function useAppState() {
                 ...(updates.jerseyNumber != null
                   ? { jerseyNumber: updates.jerseyNumber?.trim() || undefined }
                   : {}),
-                ...(updates.team != null ? { team: updates.team?.trim() || undefined } : {}),
+                ...(updates.teams != null
+                  ? { teams: normalizeTeamList(updates.teams) }
+                  : {}),
                 ...(updates.position != null
                   ? { position: updates.position?.trim() || undefined }
                   : {}),

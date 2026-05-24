@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import PlayerLinkSection from './PlayerLinkSection';
+import TeamListEditor from './TeamListEditor';
+import { getPlayerTeams } from '../utils/playerTeams';
 
 const inputClass =
   'w-full text-sm px-3 py-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200 focus:outline-none';
@@ -8,7 +10,7 @@ export default function EditPlayerModal({ player, onSave, onClose, cloudEnabled 
   const [firstName, setFirstName] = useState(player.firstName || '');
   const [lastName, setLastName] = useState(player.lastName || '');
   const [jerseyNumber, setJerseyNumber] = useState(player.jerseyNumber || '');
-  const [team, setTeam] = useState(player.team || '');
+  const [teams, setTeams] = useState(() => getPlayerTeams(player));
   const [season, setSeason] = useState(player.season || '');
 
   const handleSubmit = (e) => {
@@ -17,7 +19,7 @@ export default function EditPlayerModal({ player, onSave, onClose, cloudEnabled 
       firstName,
       lastName,
       jerseyNumber,
-      team,
+      teams,
       season,
     });
   };
@@ -29,7 +31,7 @@ export default function EditPlayerModal({ player, onSave, onClose, cloudEnabled 
       role="presentation"
     >
       <div
-        className="bg-white rounded-lg shadow-xl w-full max-w-md"
+        className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
         role="dialog"
         aria-labelledby="edit-player-title"
         onClick={(e) => e.stopPropagation()}
@@ -85,21 +87,7 @@ export default function EditPlayerModal({ player, onSave, onClose, cloudEnabled 
               className={inputClass}
             />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-              Team
-            </label>
-            <input
-              type="text"
-              value={team}
-              onChange={(e) => setTeam(e.target.value)}
-              placeholder="e.g. 7th Grade Gold"
-              className={inputClass}
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Used to group players on the Roster tab. Leave blank if not on a team yet.
-            </p>
-          </div>
+          <TeamListEditor teams={teams} onChange={setTeams} idPrefix="edit-player-team" />
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
               Season

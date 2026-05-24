@@ -5,6 +5,7 @@ import { normalizeGameType, DEFAULT_APP_META } from '../constants/gameTypes';
 import { DEFAULT_BENCHMARK_TARGETS } from '../data/defaultBenchmarkTargets';
 
 import { normalizePlayerFocus, normalizeReviewedClips } from '../utils/playerView';
+import { getPlayerTeams, normalizeTeamList } from '../utils/playerTeams';
 
 function normalizeGame(game) {
   const playByPlay = Array.isArray(game.playByPlay) ? game.playByPlay : [];
@@ -22,8 +23,12 @@ function normalizeGame(game) {
 }
 
 function normalizePlayer(player) {
+  const teams = normalizeTeamList(getPlayerTeams(player));
+  const { team: _legacyTeam, ...rest } = player;
+
   return {
-    ...player,
+    ...rest,
+    teams,
     playerFocus: normalizePlayerFocus(player.playerFocus),
     reviewedClips: normalizeReviewedClips(player.reviewedClips),
   };
@@ -82,12 +87,24 @@ function migrateV4ToV5(state) {
   return {
     ...state,
     schemaVersion: 5,
-    players: (state.players || []).map(normalizePlayer),
+    players: (state.players || []).map((player) => ({
+      ...player,
+      playerFocus: normalizePlayerFocus(player.playerFocus),
+      reviewedClips: normalizeReviewedClips(player.reviewedClips),
+    })),
     games: (state.games || []).map(normalizeGame),
     benchmarkSets: (state.benchmarkSets || []).map((set) => ({
       ...set,
       targets: migrateBenchmarkTargetsV5(set.targets),
     })),
+  };
+}
+
+function migrateV5ToV6(state) {
+  return {
+    ...state,
+    schemaVersion: 6,
+    players: (state.players || []).map(normalizePlayer),
   };
 }
 
@@ -113,6 +130,10 @@ export function migrateState(state) {
 
   if (next.schemaVersion < 5) {
     next = migrateV4ToV5(next);
+  }
+
+  if (next.schemaVersion < 6) {
+    next = migrateV5ToV6(next);
   }
 
   next.schemaVersion = SCHEMA_VERSION;
