@@ -10,7 +10,7 @@ import PlayerViewTab from './PlayerViewTab';
 import TeammatesTab from './TeammatesTab';
 import StatGlossaryButton from './StatGlossaryButton';
 
-const TABS = ['My Stats', 'Dashboard', 'Benchmarks', 'Game Logs', 'Film Room', 'Teammates'];
+const TABS = ['Focus & Film', 'Dashboard', 'Benchmarks', 'Game Logs', 'Film Room', 'Teammates'];
 
 export default function PlayerPortalApp({
   initialToken,
@@ -22,7 +22,7 @@ export default function PlayerPortalApp({
     initialToken,
     { previewPayload, previewTeamName, onExitPreview }
   );
-  const [activeTab, setActiveTab] = useState('My Stats');
+  const [activeTab, setActiveTab] = useState('Focus & Film');
   const [filmGameId, setFilmGameId] = useState(null);
   const [filmClipId, setFilmClipId] = useState(null);
   const [gameScope, setGameScope] = useState({ seasonFilter: 'all', gameTypeFilter: 'all' });
@@ -157,7 +157,7 @@ export default function PlayerPortalApp({
       </nav>
 
       <main className="flex-grow p-4 md:p-8 max-w-7xl mx-auto w-full">
-        {activeTab === 'My Stats' && (
+        {activeTab === 'Focus & Film' && (
           <PlayerViewTab
             player={player}
             games={scopedGames}

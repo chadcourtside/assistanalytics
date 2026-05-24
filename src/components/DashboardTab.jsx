@@ -89,7 +89,7 @@ export default function DashboardTab({
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mt-6">
         <div className="bg-slate-800 text-white px-4 py-3 flex justify-between items-center">
-          <h3 className="font-bold">Traditional Box Score</h3>
+          <h3 className="font-bold">Box Scores</h3>
           <button
             type="button"
             onClick={() => exportPDF('box-score-table', `${pdfPrefix}_BoxScore.pdf`, true)}
