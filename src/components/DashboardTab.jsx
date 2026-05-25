@@ -1,12 +1,15 @@
+import { useMemo } from 'react';
 import StatCard from './StatCard';
 import TableStatHeader from './TableStatHeader';
 import StatHelp from './StatHelp';
 import LastGamePanel from './LastGamePanel';
 import TrendCharts from './TrendCharts';
 import GameScopeFilter from './GameScopeFilter';
+import { anomalyCellClass } from './AnomalyHints';
 import { exportPDF } from '../utils/exportPdf';
 import { sumGameStats, calcEFG, calcAstTo, calcPer } from '../utils/stats';
 import { normalizeGameStats } from '../utils/gameStats';
+import { detectGameAnomalies, anomaliesByKey } from '../utils/statAnomalies';
 
 export default function DashboardTab({
   player,
@@ -22,6 +25,19 @@ export default function DashboardTab({
   const eFgTotal = calcEFG(totals.fgm, totals.threePm, totals.fga) ?? 0;
   const astToTotal = calcAstTo(totals.ast, totals.tov);
   const pdfPrefix = (player?.displayName || 'Player').replace(/\s+/g, '_');
+
+  const lastGameAnomalies = useMemo(
+    () => (games.length ? detectGameAnomalies(games[0], games.slice(1)) : []),
+    [games]
+  );
+
+  const rowAnomalyMaps = useMemo(
+    () =>
+      games.map((g, i) =>
+        anomaliesByKey(detectGameAnomalies(g, games.filter((_, j) => j !== i)))
+      ),
+    [games]
+  );
 
   if (games.length === 0) {
     return (
@@ -66,7 +82,7 @@ export default function DashboardTab({
           </button>
         </div>
       </div>
-      <LastGamePanel game={games[0]} onOpenFilm={onOpenFilm} />
+      <LastGamePanel game={games[0]} onOpenFilm={onOpenFilm} anomalies={lastGameAnomalies} />
       <TrendCharts games={games} />
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         <StatCard statId="mins" label="Total Mins" value={totals.mins || 0} sub={`${(totals.mins / gms).toFixed(1)}/g`} bold />
@@ -129,29 +145,35 @@ export default function DashboardTab({
                 const s = normalizeGameStats(g.stats);
                 const efg = calcEFG(s.fgm, s.threePm, s.fga);
                 const ato = calcAstTo(s.ast, s.tov);
+                const rowAnomalies = rowAnomalyMaps[i];
+                const cell = (key, content, extra = '') => (
+                  <td className={`px-3 py-2 ${extra} ${anomalyCellClass(key, rowAnomalies)}`}>{content}</td>
+                );
                 return (
                   <tr key={g.id ?? i} className="border-b hover:bg-gray-50">
                     <td className="px-3 py-2 font-medium text-gray-900">{g.opponent}</td>
                     <td className="px-3 py-2">{s.mins}</td>
-                    <td className="px-3 py-2 font-bold">{s.pts}</td>
+                    {cell('pts', s.pts, 'font-bold')}
                     <td className="px-3 py-2">{s.fgm}/{s.fga}</td>
                     <td className="px-3 py-2">{s.threePm}/{s.threePa}</td>
                     <td className="px-3 py-2">{s.ftm}/{s.fta}</td>
-                    <td className="px-3 py-2 text-blue-700 font-medium">{efg === null ? '-' : `${efg}%`}</td>
-                    <td className="px-3 py-2">{s.reb}</td>
+                    {cell('efg', efg === null ? '-' : `${efg}%`, 'text-blue-700 font-medium')}
+                    {cell('reb', s.reb)}
                     <td className="px-3 py-2">{s.oreb}</td>
-                    <td className="px-3 py-2">{s.blk}</td>
-                    <td className="px-3 py-2">{s.ast}</td>
-                    <td className="px-3 py-2">{s.stl}</td>
-                    <td className="px-3 py-2 font-medium">{s.ptch}</td>
-                    <td className="px-3 py-2">{s.tov}</td>
-                    <td className="px-3 py-2">{s.liveBallTov}</td>
+                    {cell('blk', s.blk)}
+                    {cell('ast', s.ast)}
+                    {cell('stl', s.stl)}
+                    {cell('ptch', s.ptch, 'font-medium')}
+                    {cell('tov', s.tov)}
+                    {cell('liveBallTov', s.liveBallTov)}
                     <td className="px-3 py-2 font-bold text-blue-700">{ato}</td>
                     <td className="px-3 py-2">{s.pf}</td>
                     <td className="px-3 py-2">{s.foulsDrawn}</td>
-                    <td className={`px-3 py-2 font-bold ${s.plusMinus > 0 ? 'text-green-600' : s.plusMinus < 0 ? 'text-red-600' : ''}`}>
-                      {s.plusMinus > 0 ? '+' : ''}{s.plusMinus}
-                    </td>
+                    {cell(
+                      'plusMinus',
+                      `${s.plusMinus > 0 ? '+' : ''}${s.plusMinus}`,
+                      `font-bold ${s.plusMinus > 0 ? 'text-green-600' : s.plusMinus < 0 ? 'text-red-600' : ''}`
+                    )}
                   </tr>
                 );
               })}

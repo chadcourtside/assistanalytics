@@ -35,6 +35,46 @@ export function formatPlayByPlayLine(timeStr, description) {
   return `${time} ${desc}`;
 }
 
+/** Split play-by-play textarea into non-empty lines. */
+export function getPlayByPlayLines(text) {
+  if (!text || typeof text !== 'string') return [];
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+export function getLastPlayByPlayLine(text) {
+  const lines = getPlayByPlayLines(text);
+  return lines[lines.length - 1] || '';
+}
+
+export function extractTimeFromPlayLine(line) {
+  const match = (line || '').trim().match(/^(\d{1,2}:\d{2})\s+/);
+  return match ? match[1] : '';
+}
+
+export function extractDescriptionFromPlayLine(line) {
+  const trimmed = (line || '').trim();
+  const match = trimmed.match(/^\d{1,2}:\d{2}\s+(.+)$/);
+  return match ? match[1].trim() : trimmed;
+}
+
+/** Add seconds to M:SS clip time (caps at 59:59). */
+export function addSecondsToPlayTime(timeStr, seconds) {
+  const normalized = normalizePlayTimeInput(timeStr);
+  if (!normalized) return '';
+  const [mins, secs] = normalized.split(':').map(Number);
+  const total = Math.min(59 * 60 + 59, mins * 60 + secs + (Number(seconds) || 0));
+  const nextMins = Math.floor(total / 60);
+  const nextSecs = total % 60;
+  return `${nextMins}:${String(nextSecs).padStart(2, '0')}`;
+}
+
+export function getRecentPlayByPlayLines(text, count = 3) {
+  return getPlayByPlayLines(text).slice(-count);
+}
+
 /**
  * Insert a play-by-play line into text at the textarea cursor, or append if no ref.
  */

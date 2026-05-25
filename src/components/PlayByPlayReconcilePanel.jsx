@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { compareStatsToPlayByPlay } from '../utils/playByPlayStats';
 import { parsePlayByPlayText } from '../utils/gameForm';
+import { getPlayByPlayLines } from '../utils/playByPlayForm';
 
 export default function PlayByPlayReconcilePanel({ stats, playByPlayText, onApplyCounts }) {
   const playByPlay = useMemo(
@@ -8,17 +9,28 @@ export default function PlayByPlayReconcilePanel({ stats, playByPlayText, onAppl
     [playByPlayText]
   );
 
+  const lineCount = useMemo(() => getPlayByPlayLines(playByPlayText).length, [playByPlayText]);
+
   const { mismatches, hasPlayByPlay } = useMemo(
     () => compareStatsToPlayByPlay(stats, playByPlay),
     [stats, playByPlay]
   );
 
-  if (!hasPlayByPlay) return null;
+  if (!hasPlayByPlay && lineCount === 0) return null;
+
+  if (!hasPlayByPlay) {
+    return (
+      <div className="mb-3 p-3 rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-600">
+        {lineCount} play-by-play line{lineCount === 1 ? '' : 's'} — add recognized tags so counts
+        can be reconciled with the box score.
+      </div>
+    );
+  }
 
   if (mismatches.length === 0) {
     return (
       <div className="mb-3 p-3 rounded-md border border-green-200 bg-green-50 text-sm text-green-800">
-        Play-by-play tag counts match the box score for all tracked stats.
+        {lineCount} lines · play-by-play tag counts match the box score.
       </div>
     );
   }
@@ -27,7 +39,8 @@ export default function PlayByPlayReconcilePanel({ stats, playByPlayText, onAppl
     <div className="mb-3 p-3 rounded-md border border-amber-200 bg-amber-50">
       <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
         <p className="text-sm font-semibold text-amber-900">
-          {mismatches.length} stat{mismatches.length === 1 ? '' : 's'} differ from play-by-play tags
+          {lineCount} lines · {mismatches.length} stat{mismatches.length === 1 ? '' : 's'} differ
+          from tags
         </p>
         {onApplyCounts && (
           <button
@@ -39,15 +52,16 @@ export default function PlayByPlayReconcilePanel({ stats, playByPlayText, onAppl
           </button>
         )}
       </div>
-      <ul className="text-xs text-amber-900 space-y-1">
+      <ul className="text-xs text-amber-900 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
         {mismatches.map((m) => (
           <li key={m.key}>
-            <span className="font-bold">{m.label}</span>: box score {m.entered} · tags {m.counted}
+            <span className="font-bold">{m.label}</span>: box {m.entered} · tags {m.counted}
           </li>
         ))}
       </ul>
       <p className="text-[11px] text-amber-700 mt-2">
-        Notes and uncategorized lines are ignored. Paint touches on the same line as a shot still count.
+        Notes and uncategorized lines are ignored. Compound lines (e.g. Make 2 PT, paint touch)
+        count both tags.
       </p>
     </div>
   );

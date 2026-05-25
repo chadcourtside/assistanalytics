@@ -15,7 +15,14 @@ import { applyPlayByPlayCountsToStats } from '../utils/playByPlayStats';
 import StatHelp from './StatHelp';
 import PlayByPlayTagBar from './PlayByPlayTagBar';
 import PlayByPlayReconcilePanel from './PlayByPlayReconcilePanel';
-import { insertPlayByPlayLine } from '../utils/playByPlayForm';
+import PlayByPlayEntryToolbar from './PlayByPlayEntryToolbar';
+import {
+  insertPlayByPlayLine,
+  addSecondsToPlayTime,
+  extractTimeFromPlayLine,
+  getLastPlayByPlayLine,
+  normalizePlayTimeInput,
+} from '../utils/playByPlayForm';
 import NarrationImportModal from './NarrationImportModal';
 import NarrationCheatSheetModal from './NarrationCheatSheetModal';
 
@@ -32,6 +39,7 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
   );
   const [errors, setErrors] = useState({});
   const [playTime, setPlayTime] = useState('');
+  const [lastTagLine, setLastTagLine] = useState('');
   const [customNote, setCustomNote] = useState('');
   const [quickLogMode, setQuickLogMode] = useState(false);
   const [narrationImportOpen, setNarrationImportOpen] = useState(false);
@@ -39,6 +47,33 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
   const playByPlayRef = useRef(null);
 
   const statFields = quickLogMode ? QUICK_STAT_FIELDS : STAT_FIELDS;
+
+  const advanceClipTime = (usedTime) => {
+    const base = normalizePlayTimeInput(usedTime ?? playTime);
+    if (base) setPlayTime(addSecondsToPlayTime(base, 15));
+  };
+
+  const handleAfterTagInsert = (description, usedTime) => {
+    setLastTagLine(description);
+    advanceClipTime(usedTime);
+  };
+
+  const handleUseLastTime = () => {
+    const t = extractTimeFromPlayLine(getLastPlayByPlayLine(form.playByPlayText));
+    if (t) setPlayTime(t);
+  };
+
+  const handleRepeatLastTag = () => {
+    if (!lastTagLine) return;
+    const next = insertPlayByPlayLine({
+      currentText: form.playByPlayText,
+      timeStr: playTime,
+      description: lastTagLine,
+      textarea: playByPlayRef.current,
+    });
+    setField('playByPlayText', next);
+    advanceClipTime(playTime);
+  };
 
   const insertCustomNote = () => {
     const text = customNote.trim();
@@ -51,6 +86,7 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
     });
     setField('playByPlayText', next);
     setCustomNote('');
+    advanceClipTime(playTime);
   };
 
   const title = mode === 'edit' ? 'Edit Game' : 'Add Game';
@@ -330,30 +366,24 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
               playByPlayText={form.playByPlayText}
               onApplyCounts={applyFromPlayByPlay}
             />
-            <div className="flex flex-wrap items-end gap-3 mb-2">
-              <label className="text-xs text-gray-600">
-                <span className="block font-semibold text-gray-500 uppercase mb-1">
-                  Clip time
-                </span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="3:50"
-                  value={playTime}
-                  onChange={(e) => setPlayTime(e.target.value)}
-                  className="w-24 text-sm px-3 py-2 border border-gray-300 rounded-md font-mono focus:ring focus:ring-blue-200 focus:outline-none"
-                  aria-label="Timestamp for next play tag"
-                />
-              </label>
-              <p className="text-xs text-gray-400 flex-1 min-w-[200px]">
-                Type minutes:seconds (or 350 for 3:50), then tap a tag below.
-              </p>
-            </div>
+            <PlayByPlayEntryToolbar
+              playByPlayText={form.playByPlayText}
+              playTime={playTime}
+              onPlayTimeChange={setPlayTime}
+              onUseLastTime={handleUseLastTime}
+              onRepeatLastTag={handleRepeatLastTag}
+              lastTagLine={
+                lastTagLine.length > 18 ? `${lastTagLine.slice(0, 16)}…` : lastTagLine
+              }
+            />
             <PlayByPlayTagBar
               playByPlayText={form.playByPlayText}
               timeStr={playTime}
               onChange={(text) => setField('playByPlayText', text)}
               textareaRef={playByPlayRef}
+              onAfterInsert={handleAfterTagInsert}
+              lastTagLine={lastTagLine}
+              onRepeatLast={handleRepeatLastTag}
             />
             <div className="flex flex-wrap items-end gap-2 mb-2 p-3 rounded-md border border-dashed border-slate-300 bg-slate-50">
               <label className="flex-1 min-w-[200px] text-xs text-gray-600">
