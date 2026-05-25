@@ -13,6 +13,11 @@ export default function LastGamePanel({ game, onOpenFilm, anomalies = [] }) {
   const astTo = calcAstTo(stats.ast, stats.tov);
   const hasFilm = Boolean(getYoutubeId(game.videoUrl));
   const clipCount = (game.playEvents?.length ?? game.playByPlay?.length) || 0;
+  const anomalyMap = anomaliesByKey(anomalies);
+
+  const statCell = (key, value, className = '') => (
+    <div className={`rounded-md px-1 ${anomalyCellClass(key, anomalyMap)} ${className}`}>{value}</div>
+  );
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-white rounded-lg shadow-sm border border-blue-100 overflow-hidden no-print">
