@@ -1,4 +1,3 @@
-import { GAME_TYPES } from '../constants/gameTypes';
 import { getArchivedSeasons, getWorkspaceCurrentSeason } from './season';
 
 /** Season label for a game — explicit on game, then player, then workspace current. */
@@ -13,16 +12,11 @@ export function getGameSeasonLabel(game, player, meta = null) {
 }
 
 export function filterGamesByScope(games, player, scope = {}, meta = null) {
-  const { seasonFilter = 'current', gameTypeFilter = 'all' } = scope;
+  const { seasonFilter = 'current' } = scope;
   const playerSeason = (player?.season || '').trim();
   const workspaceSeason = getWorkspaceCurrentSeason(meta);
 
   return games.filter((game) => {
-    if (gameTypeFilter !== 'all') {
-      const type = game.gameType || GAME_TYPES.GAME;
-      if (type !== gameTypeFilter) return false;
-    }
-
     if (seasonFilter === 'all') return true;
 
     const gameSeason = getGameSeasonLabel(game, player, meta);

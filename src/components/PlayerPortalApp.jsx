@@ -26,7 +26,7 @@ export default function PlayerPortalApp({
   const [activeTab, setActiveTab] = useState('Focus & Film');
   const [filmGameId, setFilmGameId] = useState(null);
   const [filmClipId, setFilmClipId] = useState(null);
-  const [gameScope, setGameScope] = useState({ seasonFilter: 'current', gameTypeFilter: 'all' });
+  const [gameScope, setGameScope] = useState({ seasonFilter: 'current' });
 
   const player = payload?.player ?? null;
   const games = payload?.games ?? [];

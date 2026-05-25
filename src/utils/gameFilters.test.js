@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { filterGamesByScope, getGameSeasonLabel } from './gameFilters.js';
-import { GAME_TYPES } from '../constants/gameTypes.js';
 
 describe('gameFilters', () => {
   const player = { season: '2025-26' };
@@ -12,32 +11,20 @@ describe('gameFilters', () => {
   it('filters by workspace current season', () => {
     const meta = { currentSeason: '2025-26' };
     const games = [
-      { id: '1', season: '2025-26', gameType: 'game' },
-      { id: '2', season: '2024-25', gameType: 'game' },
+      { id: '1', season: '2025-26' },
+      { id: '2', season: '2024-25' },
     ];
-    const filtered = filterGamesByScope(games, player, { seasonFilter: 'current', gameTypeFilter: 'all' }, meta);
+    const filtered = filterGamesByScope(games, player, { seasonFilter: 'current' }, meta);
     expect(filtered.map((g) => g.id)).toEqual(['1']);
   });
 
   it('filters by player current season', () => {
     const games = [
-      { id: '1', season: '2025-26', gameType: 'game' },
-      { id: '2', season: '2024-25', gameType: 'game' },
-      { id: '3', gameType: 'game' },
+      { id: '1', season: '2025-26' },
+      { id: '2', season: '2024-25' },
+      { id: '3' },
     ];
-    const filtered = filterGamesByScope(games, player, { seasonFilter: 'player', gameTypeFilter: 'all' });
+    const filtered = filterGamesByScope(games, player, { seasonFilter: 'player' });
     expect(filtered.map((g) => g.id)).toEqual(['1', '3']);
-  });
-
-  it('filters by game type', () => {
-    const games = [
-      { id: '1', gameType: GAME_TYPES.GAME },
-      { id: '2', gameType: GAME_TYPES.PRACTICE },
-    ];
-    const filtered = filterGamesByScope(games, player, {
-      seasonFilter: 'all',
-      gameTypeFilter: GAME_TYPES.PRACTICE,
-    });
-    expect(filtered.map((g) => g.id)).toEqual(['2']);
   });
 });

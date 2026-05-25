@@ -3,7 +3,6 @@ import { formatGameTitle, formatGameSubtitle, normalizeGameStats } from '../util
 import { duplicateGameFormState } from '../utils/gameForm';
 import { getPlayerTeams } from '../utils/playerTeams';
 import { getWorkspaceCurrentSeason } from '../utils/season';
-import { GAME_TYPE_LABELS } from '../constants/gameTypes';
 import { countReviewedClips } from '../utils/playerView';
 import GameFormModal from './GameFormModal';
 import PlayByPlayList from './PlayByPlayList';
@@ -131,11 +130,6 @@ export default function LogsTab({
                   <div>
                     <h3 className="text-xl font-bold text-gray-800">
                       {formatGameTitle(g, player)}
-                      {g.gameType && g.gameType !== 'game' && (
-                        <span className="ml-2 text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 align-middle">
-                          {GAME_TYPE_LABELS[g.gameType] || g.gameType}
-                        </span>
-                      )}
                     </h3>
                     <p className="text-sm text-gray-500">
                       {formatGameSubtitle(g, s)}

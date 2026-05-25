@@ -8,7 +8,6 @@ import {
   buildGamePayload,
   parseStatValue,
 } from '../utils/gameForm';
-import { GAME_TYPE_OPTIONS } from '../constants/gameTypes';
 import { getPlayerTeams } from '../utils/playerTeams';
 import { getWorkspaceCurrentSeason } from '../utils/season';
 import { applyPlayByPlayCountsToStats } from '../utils/playByPlayStats';
@@ -255,22 +254,6 @@ export default function GameFormModal({ mode, game, initialForm, player, meta, o
               <p className="text-[11px] text-gray-400 mt-1">
                 Which team was this game for? Important when a player is on travel and club teams.
               </p>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-                Game type
-              </label>
-              <select
-                value={form.gameType}
-                onChange={(e) => setField('gameType', e.target.value)}
-                className={inputClass}
-              >
-                {GAME_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">

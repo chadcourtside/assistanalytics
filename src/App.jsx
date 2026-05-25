@@ -58,7 +58,7 @@ function CoachApp() {
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [teamSettingsOpen, setTeamSettingsOpen] = useState(false);
   const [seasonManageOpen, setSeasonManageOpen] = useState(false);
-  const [gameScope, setGameScope] = useState({ seasonFilter: 'current', gameTypeFilter: 'all' });
+  const [gameScope, setGameScope] = useState({ seasonFilter: 'current' });
   const {
     state,
     activePlayer,
